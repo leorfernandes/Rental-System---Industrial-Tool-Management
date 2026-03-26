@@ -1,5 +1,7 @@
 # Rental System - Industrial Tool Management
 
+![Playwright Tests](https://github.com/leorfernandes/Rental-System---Industrial-Tool-Management/actions/workflows/playwright.yml/badge.svg)
+
 **IN PROGRESS - EXPECTED APRIL 2026**
 
 ## 📋 Project Overview
