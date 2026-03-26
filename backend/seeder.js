@@ -5,8 +5,8 @@ const Asset = require('./models/Asset');
 const seedAssets = [
   { name: "Industrial Jackhammer", category: "Power Tools", dailyRate: 85, status: "Available" },
   { name: "Scaffolding Tower (5m)", category: "Scaffolding", dailyRate: 45, status: "Available" },
-  { name: "Heavy Duty Generator", category: "Generators", dailyRate: 120, status: "Maintenance" },
-  { name: "Laser Level Kit", category: "Power Tools", dailyRate: 30, status: "Rented" },
+  { name: "Heavy Duty Generator", category: "Generators", dailyRate: 120, status: "Available" },
+  { name: "Laser Level Kit", category: "Power Tools", dailyRate: 30, status: "Available" },
   { name: "Demolition Saw", category: "Power Tools", dailyRate: 65, status: "Available" },
   { name: "Extension Ladder (10m)", category: "Scaffolding", dailyRate: 25, status: "Available" }
 ];

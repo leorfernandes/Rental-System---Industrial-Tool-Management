@@ -30,7 +30,7 @@ Unlike standard CRUD tests, this suite focuses on Contract Testing and Business 
 - **Framework**: Express.js v5
 - **Database**: MongoDB (with Mongoose ODM)
 - **Authentication**: JWT (JSON Web Tokens) with bcryptjs
-- **Testing**: Jest & Supertest
+- **Testing**: Jest & Supertest (backend), Playwright (E2E)
 - **Development**: Nodemon for hot reloading
 - **Environment Variables**: dotenv for configuration management
 - **Security**: CORS enabled for cross-origin requests
@@ -39,17 +39,20 @@ Unlike standard CRUD tests, this suite focuses on Contract Testing and Business 
 
 ```
 FinalProject/
-├── models/
-│   └── Asset.js           # Mongoose schema for rental assets
-├── routes/
-│   └── assetRoutes.js     # API endpoints for asset operations
+├── backend/
+│   ├── models/
+│   │   └── Asset.js           # Mongoose schema for rental assets
+│   ├── routes/
+│   │   └── assetRoutes.js     # API endpoints for asset operations
+│   ├── server.js              # Main application entry point
+│   └── seeder.js              # Database seeding utility
 ├── tests/
-│   ├── asset.test.js      # Asset API endpoint tests
-│   └── health.test.js     # Health check endpoint tests
-├── package.json           # Project dependencies and scripts
-├── server.js              # Main application entry point
-├── seeder.js              # Database seeding utility
-└── .env                   # Environment variables (not tracked)
+│   ├── asset.test.js          # Jest API integration tests
+│   └── health.test.js         # Health check endpoint tests
+├── e2e/
+│   └── rental-flow.spec.js    # Playwright E2E tests
+├── package.json               # Project dependencies and scripts
+└── .env                       # Environment variables (not tracked)
 ```
 
 ## 🚀 Getting Started
@@ -189,7 +192,9 @@ The seeder includes sample equipment:
 | `npm start` | Start production server |
 | `npm run dev` | Start development server with nodemon |
 | `npm run seed` | Seed database with sample data |
-| `npm test` | Run test suite in watch mode |
+| `npm test` | Run Jest backend tests |
+| `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run test:all` | Run all tests (Jest + Playwright) |
 
 ## 🗄️ Database Configuration
 

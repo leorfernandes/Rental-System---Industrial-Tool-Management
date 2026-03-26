@@ -1,15 +1,22 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../server'); // You'll need to export 'app' from server.js
+const app = require('../backend/server');
+const Asset = require('../backend/models/Asset');
+const Rental = require('../backend/models/Rental');
 
 describe('Asset API Endpoints', () => {
-  
+  // CLEANUP AFTER EACH TEST
+  afterEach(async () => {
+    await Asset.deleteMany({ name: "Jackhammer" }); // Delete specific test assets
+    await Rental.deleteMany({ customerName: "Test User" }); // Delete specific test rentals
+  });
+
   // Test 1: Successful Creation
   it('should create a new asset', async () => {
     const res = await request(app)
       .post('/api/assets')
       .send({
-        name: "Test Drill",
+        name: "Test Tool",
         category: "Power Tools",
         dailyRate: 50
       });
@@ -23,7 +30,7 @@ describe('Asset API Endpoints', () => {
     const res = await request(app)
       .post('/api/assets')
       .send({
-        name: "Broken Drill",
+        name: "Test Tool",
         category: "Power Tools",
         dailyRate: -10
       });
@@ -43,4 +50,23 @@ describe('Asset API Endpoints', () => {
     
     expect(res.statusCode).toEqual(400);
   });
+
+  it('should clear maintenance and make asset available', async () => {
+      // 1. Setup: Create a temporary asset
+      const asset = await Asset.create({
+        name: "Test Tool",
+        category: "Power Tools",
+        dailyRate: 50,
+        status: "Maintenance"
+      });
+  
+      const res = await request(app)
+        .put(`/api/assets/${asset._id}/clear-maintenance`)
+        .send();
+  
+      // 3. Assertion: Asset should be available
+      expect(res.statusCode).toBe(200);
+      expect(res.body.asset.status).toBe("Available");
+
+    });
 });

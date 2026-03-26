@@ -3,7 +3,10 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+const path = require('path');
 const app = express();
+// Serve the 'public' folder as static files
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Middleware
 app.use(cors());
@@ -60,3 +63,6 @@ module.exports = app; // Export app for testing
 // Routes
 const assetRoutes = require('./routes/assetRoutes');
 app.use('/api/assets', assetRoutes);
+
+const rentalRoutes = require('./routes/rentalRoutes');
+app.use('/api/rentals', rentalRoutes);
