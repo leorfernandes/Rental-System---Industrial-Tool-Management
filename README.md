@@ -1,5 +1,6 @@
 # Rental System - Industrial Tool Management
 
+![Jest Tests](https://github.com/leorfernandes/Rental-System---Industrial-Tool-Management/actions/workflows/jest.yml/badge.svg)
 ![Playwright Tests](https://github.com/leorfernandes/Rental-System---Industrial-Tool-Management/actions/workflows/playwright.yml/badge.svg)
 
 **IN PROGRESS - EXPECTED APRIL 2026**
@@ -12,12 +13,14 @@ This project is a comprehensive rental management system designed for industrial
 
 - **Asset Management**: Create, read, update, and delete industrial tool records
 - **Inventory Tracking**: Monitor equipment status (Available, Rented, Maintenance)
+- **User Authentication**: JWT-based login/register with role-based access (admin/staff)
+- **Rental Transaction Management**: Create rentals, calculate costs, and process returns
 - **Category Organization**: Tools organized into categories (Power Tools, Scaffolding, Generators, Lifts, Hand Tools)
-- **Rental Rate Management**: Track daily rental rates for each asset
 - **Maintenance Tracking**: Record last inspection dates for equipment safety
 - **Data Validation**: Comprehensive input validation to ensure data integrity
 - **API Testing**: Automated test suite with Jest and Supertest
-- **Database Seeding**: Pre-populate database with sample data for testing
+- **E2E Testing**: Playwright tests for complete user workflows
+- **CI/CD Pipeline**: GitHub Actions with automated testing
 
 ## 🧪 Testing & Quality Assurance Strategy
 Unlike standard CRUD tests, this suite focuses on Contract Testing and Business Rule Validation:
@@ -43,17 +46,27 @@ Unlike standard CRUD tests, this suite focuses on Contract Testing and Business 
 FinalProject/
 ├── backend/
 │   ├── models/
-│   │   └── Asset.js           # Mongoose schema for rental assets
+│   │   ├── Asset.js           # Asset schema
+│   │   ├── Rental.js          # Rental transaction schema
+│   │   └── User.js            # User authentication schema
 │   ├── routes/
-│   │   └── assetRoutes.js     # API endpoints for asset operations
+│   │   ├── assetRoutes.js     # Asset CRUD endpoints
+│   │   ├── authRoutes.js      # Login/register endpoints
+│   │   └── rentalRoutes.js    # Rental transaction endpoints
+│   ├── middleware/
+│   │   └── auth.js            # JWT authentication middleware
 │   ├── server.js              # Main application entry point
-│   └── seeder.js              # Database seeding utility
+│   ├── connectToDatabase.js   # MongoDB connection handler
+│   ├── seeder.js              # Asset seeding utility
+│   └── seedUser.js            # User seeding utility
 ├── tests/
 │   ├── asset.test.js          # Jest API integration tests
 │   └── health.test.js         # Health check endpoint tests
 ├── e2e/
 │   └── rental-flow.spec.js    # Playwright E2E tests
-├── package.json               # Project dependencies and scripts
+├── .github/workflows/
+│   ├── jest.yml               # Jest CI workflow
+│   └── playwright.yml         # Playwright E2E CI workflow
 └── .env                       # Environment variables (not tracked)
 ```
 
@@ -86,13 +99,14 @@ FinalProject/
    MONGO_HOST=your_mongodb_host
    MONGO_DB=your_database_name
    MY_PORT=8888
+   JWT_SECRET=your_secret_key_here
    ```
 
 4. **Seed the database (optional)**
    ```bash
    npm run seed
    ```
-   This will populate your database with sample industrial tools.
+   This will create an admin user and populate your database with sample industrial tools.
 
 5. **Start the server**
    
@@ -111,75 +125,37 @@ The server will start on `http://localhost:8888` (or your configured port).
 ## 📡 API Endpoints
 
 ### Health Check
-- **GET** `/api/health`
-  - Returns server status
-  - Response: `{ status: 'UP', message: 'Rental System API is alive' }`
+- **GET** `/api/health` - Server status check
+
+### Authentication
+- **POST** `/api/auth/register` - Register new user
+- **POST** `/api/auth/login` - Login and receive JWT token
 
 ### Assets
+- **GET** `/api/assets` - Retrieve all assets
+- **POST** `/api/assets` - Create new asset
+- **PUT** `/api/assets/:id` - Update asset
+- **DELETE** `/api/assets/:id` - Delete asset
 
-- **GET** `/api/assets`
-  - Retrieve all assets in inventory
-  - Response: Array of asset objects
-
-- **POST** `/api/assets`
-  - Add a new asset to inventory
-  - Request Body:
-    ```json
-    {
-      "name": "Industrial Jackhammer",
-      "category": "Power Tools",
-      "dailyRate": 85,
-      "status": "Available"
-    }
-    ```
-  - Response: Created asset object with `_id`
-
-### Asset Schema
-
-```javascript
-{
-  name: String (required, trimmed),
-  category: String (required, enum),
-  dailyRate: Number (required, min: 0),
-  status: String (enum: Available|Rented|Maintenance, default: Available),
-  lastInspection: Date (default: now),
-  timestamps: true (createdAt, updatedAt)
-}
-```
-
-### Valid Categories
-- Power Tools
-- Scaffolding
-- Generators
-- Lifts
-- Hand Tools
-
-## 🧪 Testing & Quality Assurance Strategy
-
-This project uses a **Test-Driven Development (TDD)** approach to ensure high-performance reliability for industrial-scale inventory management.
-
-**Run the automated suite:**
-```bash
-npm test
-```
-### Key Testing Focus Areas:
-- **Business Logic Validation:** Verified complex state transitions (e.g., ensuring an asset cannot move from 'Available' to 'Maintenance' without valid status updates).
-- **Boundary Value Analysis (BVA):** Implemented negative testing for dailyRate to prevent zero or negative values from entering the database.
-- **Contract Testing:** Used Supertest to validate that API responses strictly match expected JSON schemas and HTTP status codes (200, 201, 400, 404).
-- **Security & Auth Testing:** Validated JWT token generation and restricted access to protected asset modification endpoints.
-- **Data Integrity:** Used Mongoose schema validation as a 'Shift-Left' strategy to catch data errors before they reach the persistence layer.
+### Rentals
+- **POST** `/api/rentals` - Create new rental (calculates cost automatically)
+- **PUT** `/api/rentals/:id/return` - Process return (requires auth)
 
 ## 🔒 Security Features
 
+- **JWT Authentication**: Token-based authentication for protected routes
+- **Password Hashing**: bcryptjs with salting for secure password storage
+- **Role-Based Access**: Admin and staff roles with middleware protection
 - **Input Validation**: Mongoose schema validation prevents invalid data
 - **CORS**: Cross-Origin Resource Sharing enabled
-- **JWT Ready**: Infrastructure for token-based authentication
-- **Password Hashing**: bcryptjs for secure password storage
 - **Environment Variables**: Sensitive data isolated in `.env` file
 
 ## 📦 Sample Seed Data
 
-The seeder includes sample equipment:
+**Users:**
+- Admin user (username: `admin`, password: `password123`)
+
+**Assets:**
 - Industrial Jackhammer - $85/day
 - Scaffolding Tower (5m) - $45/day
 - Heavy Duty Generator - $120/day

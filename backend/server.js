@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const connectToDatabase = require('./connectToDatabase');
 
 const path = require('path');
 const app = express();
@@ -20,26 +21,6 @@ app.get('/api/health', (req, res) => {
 // Connect to MongoDB
 const PORT = process.env.MY_PORT || 8888;
 const MONGO_URI = process.env.MONGO_URI;
-
-async function connectToDatabase() {
-    try {
-      const {
-        MONGO_USER,
-        MONGO_PASS,
-        MONGO_HOST,
-        MONGO_DB
-      } = process.env;
-  
-      const mongoURI = `mongodb+srv://${MONGO_USER}:${encodeURIComponent(MONGO_PASS)}@${MONGO_HOST}/${MONGO_DB}`;
-  
-      await mongoose.connect(mongoURI);
-  
-      console.log("MongoDB connected");
-    } catch (error) {
-      console.error("MongoDB connection error:", error);
-      process.exit(1);  // terminates the program
-    }
-  }
 
 // Start the server after connecting to the database
 connectToDatabase().then(() => {
@@ -66,3 +47,6 @@ app.use('/api/assets', assetRoutes);
 
 const rentalRoutes = require('./routes/rentalRoutes');
 app.use('/api/rentals', rentalRoutes);
+
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);

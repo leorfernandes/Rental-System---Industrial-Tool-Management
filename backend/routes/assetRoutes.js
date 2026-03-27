@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Asset = require('../models/Asset');
 
+const auth = require('../middleware/auth');
+
 // @route   POST /api/assets
 // @desc    Add a new industrial tool
 router.post('/', async (req, res) => {
@@ -16,7 +18,7 @@ router.post('/', async (req, res) => {
 
 // @route   GET /api/assets
 // @desc    Get all tools (Inventory list)
-router.get('/', async (req, res) => {
+router.get('/',  async (req, res) => {
   try {
     const assets = await Asset.find();
     res.json(assets);

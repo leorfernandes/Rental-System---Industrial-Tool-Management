@@ -2,12 +2,40 @@ const request = require('supertest');
 const app = require('../backend/server');
 const Asset = require('../backend/models/Asset');
 const Rental = require('../backend/models/Rental');
+const User = require('../backend/models/User');
+const mongoose = require('mongoose');
+
+const jwt = require('jsonwebtoken');
 
 describe('Rental Logic Tests', () => {
+  let token;
+
+  beforeAll(async () => {
+          await User.deleteMany({ username: 'rental-tester' });
+            const user = new User({
+              username: 'rental-tester',
+              password: 'password123',
+              role: 'admin'
+          });
+          await user.save();
+  
+          token = jwt.sign(
+              { id: user._id, role: user.role },
+              process.env.JWT_SECRET,
+              { expiresIn: '1h' }
+          );
+        });
+
   // CLEANUP AFTER EACH TEST
   afterEach(async () => {
     await Asset.deleteMany({ name: "Test Tool" }); // Delete specific test assets
     await Rental.deleteMany({ customerName: "Test User" }); // Delete specific test rentals
+  });
+
+  // CLEANUP AFTER ALL TESTS
+  afterAll(async () => {
+    await User.deleteMany({ username: 'rental-tester' });
+    await mongoose.connection.close();
   });
 
   it('should calculate the correct price for a 10-day rental', async () => {
@@ -25,6 +53,7 @@ describe('Rental Logic Tests', () => {
 
     const res = await request(app)
       .post('/api/rentals')
+      .set('x-auth-token', token)
       .send({
         asset: asset._id,
         customerName: "Test User",
@@ -59,7 +88,7 @@ describe('Rental Logic Tests', () => {
     });
 
     // 3. Action: Call the Return endpoint
-    const res = await request(app).put(`/api/rentals/${rental._id}/return`).send();
+    const res = await request(app).put(`/api/rentals/${rental._id}/return`).set('x-auth-token', token).send();
 
     // 4. Assertions
     expect(res.statusCode).toBe(200);

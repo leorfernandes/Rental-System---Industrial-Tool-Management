@@ -1,5 +1,62 @@
 const API_URL = 'http://localhost:8888/api/assets';
 
+let isLoginMode = true;
+
+// Toggle between Login and Register
+document.getElementById('toggle-auth').addEventListener('click', () => {
+    isLoginMode = !isLoginMode;
+    document.getElementById('auth-title').innerText = isLoginMode ? 'Welcome Back' : 'Create Account';
+    document.getElementById('auth-submit-btn').innerText = isLoginMode ? 'Login' : 'Register';
+    document.getElementById('toggle-auth').innerText = isLoginMode ? 'Need an account? Register here.' : 'Already have an account? Login.';
+});
+
+// Handle Auth Submission
+document.getElementById('auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const username = document.getElementById('auth-username').value;
+    const password = document.getElementById('auth-password').value;
+    const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+
+    try {
+        const response = await fetch(`http://localhost:8888${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // STORE THE TOKEN
+            localStorage.setItem('x-auth-token', data.token);
+            showNotification("Success", isLoginMode ? "Logged in!" : "Account created!", "success");
+            
+            // Hide overlay and load assets
+            document.getElementById('auth-overlay').classList.add('hidden');
+            loadAssets();
+        } else {
+            showNotification("Auth Error", data.message, "error");
+        }
+    } catch (err) {
+        showNotification("Error", "Server unreachable", "error");
+    }
+});
+
+// Check for token on page load
+function checkAuth() {
+    const token = localStorage.getItem('x-auth-token');
+    if (!token) {
+        document.getElementById('auth-overlay').classList.remove('hidden');
+    } else {
+        document.getElementById('auth-overlay').classList.add('hidden');
+        loadAssets();
+    }
+}
+
+// Update your DOMContentLoaded
+document.addEventListener('DOMContentLoaded', checkAuth);
+
 async function loadAssets() {
     try {
         const response = await fetch(API_URL);
@@ -126,8 +183,7 @@ document.getElementById('rental-form').addEventListener('submit', async (e) => {
 
 async function handleReturn(assetId) {
     try {
-        // We'll add a specific endpoint to the backend to return by Asset ID 
-        // OR you can fetch all rentals and find the one that matches this asset.
+
         const response = await fetch(`http://localhost:8888/api/rentals/return-by-asset/${assetId}`, {
             method: 'PUT'
         });
@@ -166,5 +222,3 @@ function showNotification(title, message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 4000);
 }
-
-document.addEventListener('DOMContentLoaded', loadAssets);

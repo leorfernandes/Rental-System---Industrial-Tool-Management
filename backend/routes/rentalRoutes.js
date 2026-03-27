@@ -3,6 +3,8 @@ const router = express.Router();
 const Rental = require('../models/Rental');
 const Asset = require('../models/Asset');
 
+const auth = require('../middleware/auth');
+
 router.post('/', async (req, res) => {
   try {
     // 1. Find the asset to get its price and current status

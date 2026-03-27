@@ -3,7 +3,15 @@ const { test, expect } = require('@playwright/test');
 test.describe('Modular Asset Lifecycle', () => {
     
     test.beforeEach(async ({ page }) => {
-        await page.goto('http://localhost:8888');
+        await page.goto('/');
+        
+        // 1. Fill out the login form
+        await page.fill('#auth-username', 'admin');
+        await page.fill('#auth-password', 'password123');
+        await page.click('#auth-submit-btn');
+
+        // Save the localStorage/Cookies to a file
+        await page.context().storageState({ path: 'playwright/.auth/user.json' });
     });
 
     test('Step 1: Renting an Available Asset', async ({ page }) => {

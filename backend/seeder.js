@@ -1,6 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Asset = require('./models/Asset');
+const connectToDatabase = require('./connectToDatabase');
 
 const seedAssets = [
   { name: "Industrial Jackhammer", category: "Power Tools", dailyRate: 85, status: "Available" },
@@ -14,18 +15,7 @@ const seedAssets = [
 const importData = async () => {
   try {
     // 1. Connect using your existing logic    
-    const {
-            MONGO_USER,
-            MONGO_PASS,
-            MONGO_HOST,
-            MONGO_DB
-          } = process.env;
-      
-          const mongoURI = `mongodb+srv://${MONGO_USER}:${encodeURIComponent(MONGO_PASS)}@${MONGO_HOST}/${MONGO_DB}`;
-      
-          await mongoose.connect(mongoURI);
-      
-          console.log("MongoDB connected");
+    await connectToDatabase();
 
     // 2. Clear existing data (Careful! This wipes the collection)
     await Asset.deleteMany();
