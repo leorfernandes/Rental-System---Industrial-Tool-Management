@@ -28,12 +28,6 @@
                     Login
                 </button>
             </form>
-
-            <div class="mt-6 text-center">
-                <button id="toggle-auth" class="text-sm text-slate-600 hover:text-slate-800 underline">
-                    Need an account? Register here.
-                </button>
-            </div>
         </div>
     </div>
 
@@ -41,45 +35,21 @@
     <nav class="bg-slate-800 text-white p-4 shadow-lg">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold flex items-center gap-2">
-                <span>🛠️</span> Industrial Equipment Manager
+                Industrial Equipment Manager
             </h1>
-            <div id="connection-status" class="text-xs bg-green-500 px-2 py-1 rounded">System Online</div>
+            <div>
+                Name: <span id="user-name-display" class="font-semibold"></span> |
+                Role: <span id="user-role-display" class="font-semibold"></span>
+            </div>
         </div>
     </nav>
 
-    <nav id="tab-nav" class=" bg-white border-b border-slate-200 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 flex space-x-8">
-            <button onclick="switchTab('inventory')" id="tab-inventory" class="py-4 px-2 border-b-2 border-slate-800 font-medium text-slate-800">
-                📦 Inventory
-            </button>
-            <button onclick="switchTab('analytics')" id="tab-analytics" class="hidden py-4 px-2 border-b-2 border-transparent font-medium text-slate-500 hover:text-slate-700">
-                📊 Analytics
-            </button>
-            <button onclick="switchTab('users')" id="tab-users" class="hidden py-4 px-2 border-b-2 border-transparent font-medium text-slate-500 hover:text-slate-700">
-                👥 User Management
-            </button>
-            <div class="flex-grow"></div>
-            <button onclick="logout()" class="py-4 px-2 text-red-600 font-medium hover:text-red-800">
-                Logout
-            </button>
-        </div>
+    <nav id="navBar" class=" bg-white border-b border-slate-200 sticky top-0 z-50">
     </nav>
 
-    <main class="container mx-auto py-8 px-4">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-extrabold text-slate-700">Live Inventory</h2>
-            <button onclick="loadAssets()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition">
-                Refresh Data
-            </button>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-md mb-8 max-w-2xl mx-auto">
-            <h3 class="text-center font-bold text-gray-700 mb-4">Inventory Distribution</h3>
-            <canvas id="inventoryChart"></canvas>
-        </div>
-
-        <div id="asset-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <p class="text-gray-500 italic">Connecting to inventory database...</p>
+    <main id="main-content" class="container mx-auto py-8 px-4">
+        <div class="flex items-center justify-center h-64">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-800"></div>
         </div>
     </main>
 

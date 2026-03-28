@@ -9,14 +9,30 @@ const createAdminUser = async () => {
         await connectToDatabase();
         
         // 2. Create admin user
-        const admin = new User({
+        const existingAdmin = await User.findOne({ username: 'admin' });
+        if (!existingAdmin) {
+            const admin = new User({
             username: 'admin',
             password: 'password123',
             role: 'admin'
         });
-
-        await admin.save();
-        console.log('Admin user created!');
+            await admin.save();
+        } else {
+            console.log('Admin user already exists!');
+        }
+        
+        const existingStaff = await User.findOne({ username: 'staff' });
+        if (!existingStaff) {
+            const staff = new User({
+                username: 'staff',
+                password: 'password123',
+                role: 'staff'
+            });
+            await staff.save();
+        } else {
+            console.log('Staff user already exists!');
+        }
+        
         process.exit();
         
         } catch (error) {

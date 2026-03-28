@@ -23,7 +23,7 @@
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
     "seed": "node backend/seedUser.js && node backend/seeder.js",
-    "test": "jest",
+    "test": "jest --runInBand --forceExit",
     "test:watch": "jest --watchAll --runInBand",
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:e2e"

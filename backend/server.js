@@ -20,7 +20,6 @@ app.get('/api/health', (req, res) => {
 
 // Connect to MongoDB
 const PORT = process.env.MY_PORT || 8888;
-const MONGO_URI = process.env.MONGO_URI;
 
 // Start the server after connecting to the database
 connectToDatabase().then(() => {
@@ -32,10 +31,10 @@ connectToDatabase().then(() => {
     process.exit(1);  // terminates the program
 });
 
-// Only listen if this file is run directly (not by a test)
+// Only listen if this file is run directly
 if (require.main === module) {
   connectToDatabase().then(() => {
-    app.listen(PORT, () => console.log(`🚀 Server on ${PORT}`));
+    app.listen(PORT, () => console.log(`Server on ${PORT}`));
   });
 }
 
@@ -50,3 +49,6 @@ app.use('/api/rentals', rentalRoutes);
 
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
+
+const analyticsRoutes = require('./routes/analyticsRoutes');
+app.use('/api/analytics', analyticsRoutes);
