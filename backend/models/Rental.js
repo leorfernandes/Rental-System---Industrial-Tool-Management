@@ -6,7 +6,11 @@ const RentalSchema = new mongoose.Schema({
     ref: 'Asset', // This links to your Asset model
     required: true 
   },
-  customerName: { type: String, required: true },
+  renter: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Renter',
+      required: true
+  },
   rentDate: { type: Date, default: Date.now },
   returnDate: { type: Date, required: true },
   totalCost: { type: Number, default: 0 },

@@ -1,54 +1,39 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const connectToDatabase = require('./connectToDatabase');
 
-const path = require('path');
 const app = express();
-// Serve the 'public' folder as static files
+
+// 1. MIDDLEWARE FIRST
+app.use(cors());
+app.use(express.json()); // Body parser MUST be here
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// 2. DEFINE ROUTES (Before listening)
+app.use('/api/assets', require('./routes/assetRoutes'));
+app.use('/api/rentals', require('./routes/rentalRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/renters', require('./routes/renterRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
-// Basic Health Check Route
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'UP', message: 'Rental System API is alive' });
+  res.status(200).json({ status: 'UP' });
 });
 
-// Connect to MongoDB
+// 3. START SERVER (Single block)
 const PORT = process.env.MY_PORT || 8888;
 
-// Start the server after connecting to the database
 connectToDatabase().then(() => {
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
 }).catch((error) => {
     console.error("Failed to connect to database:", error);
-    process.exit(1);  // terminates the program
+    process.exit(1);
 });
 
-// Only listen if this file is run directly
-if (require.main === module) {
-  connectToDatabase().then(() => {
-    app.listen(PORT, () => console.log(`Server on ${PORT}`));
-  });
-}
-
-module.exports = app; // Export app for testing
-
-// Routes
-const assetRoutes = require('./routes/assetRoutes');
-app.use('/api/assets', assetRoutes);
-
-const rentalRoutes = require('./routes/rentalRoutes');
-app.use('/api/rentals', rentalRoutes);
-
-const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
-
-const analyticsRoutes = require('./routes/analyticsRoutes');
-app.use('/api/analytics', analyticsRoutes);
+module.exports = app;

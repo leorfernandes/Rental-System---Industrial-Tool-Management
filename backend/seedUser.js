@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('./models/User');
+const Renter = require('./models/Renter');
 require('dotenv').config();
 const connectToDatabase = require('./connectToDatabase');
 
@@ -9,28 +10,49 @@ const createAdminUser = async () => {
         await connectToDatabase();
         
         // 2. Create admin user
-        const existingAdmin = await User.findOne({ username: 'admin' });
+        const existingAdmin = await User.findOne({ email: 'admin@example.com' });
         if (!existingAdmin) {
             const admin = new User({
-            username: 'admin',
+            name: 'Admin User',
+            email: 'admin@example.com',
             password: 'password123',
             role: 'admin'
         });
             await admin.save();
+            console.log('Admin user created!');
         } else {
             console.log('Admin user already exists!');
         }
         
-        const existingStaff = await User.findOne({ username: 'staff' });
+        // 3. Create staff user
+        const existingStaff = await User.findOne({ email: 'staff@example.com' });
         if (!existingStaff) {
             const staff = new User({
-                username: 'staff',
+                name: 'Staff User',
+                email: 'staff@example.com',
                 password: 'password123',
                 role: 'staff'
             });
             await staff.save();
+            console.log('Staff user created!');
         } else {
             console.log('Staff user already exists!');
+        }
+
+        // 4. Create renter user
+        const existingRenter = await Renter.findOne({ email: 'test.renter@example.com' });
+        if (!existingRenter) {
+            const renter = new Renter({
+            'firstName': 'Test',
+            'lastName': 'Renter',
+            'email': 'test.renter@example.com',
+            'phone': '123-456-7890',
+            'notes': 'Test renter account'
+        });
+            await renter.save();
+            console.log('Renter user created!');
+        } else {
+            console.log('Renter user already exists!');
         }
         
         process.exit();

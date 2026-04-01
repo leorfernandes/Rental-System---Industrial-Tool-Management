@@ -29,7 +29,6 @@ router.get('/summary', async (req, res) => {
         ]);
 
         // 4. Get Raw Data for Scatter Plot & Detailed Tables
-        // We only select the fields needed to keep the response lean
         const rawAssets = await Asset.find({}, 'name category dailyRate status');
 
         res.json({
@@ -37,7 +36,7 @@ router.get('/summary', async (req, res) => {
             categoryData: categoryDist,
             averageRate: avgRate[0]?.average || 0,
             rateData: rateDist,
-            rawAssets: rawAssets // <--- This is what powers your scatter plot!
+            rawAssets: rawAssets
         });
     } catch (err) {
         console.error(err.message);

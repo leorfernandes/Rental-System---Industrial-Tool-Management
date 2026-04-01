@@ -8,11 +8,11 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     try {
         
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ message: 'Invalid Credentials' });
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -25,25 +25,9 @@ router.post('/login', async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        res.json({ token, user: { username: user.username, role: user.role } });
+        res.json({ token, user: { email: user.email, role: user.role } });
     } catch (err) {
-        console.error(`Login error for user ${username}:`, err);
-        res.status(500).send('Server error');
-    }
-});
-
-router.post('/register', async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        let user = await User.findOne({ username });
-        if (user) return res.status(400).json({ message: 'User already exists' });
-
-        user = new User({ username, password });
-        await user.save();
-
-        const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token });
-    } catch (err) {
+        console.error(`Login error for user ${email}:`, err);
         res.status(500).send('Server error');
     }
 });
