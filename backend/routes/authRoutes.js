@@ -11,7 +11,6 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        
         const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ message: 'Invalid Credentials' });
 
@@ -25,7 +24,7 @@ router.post('/login', async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        res.json({ token, user: { email: user.email, role: user.role } });
+        res.json({ token, user: { email: user.email, role: user.role, name: user.name } });
     } catch (err) {
         console.error(`Login error for user ${email}:`, err);
         res.status(500).send('Server error');

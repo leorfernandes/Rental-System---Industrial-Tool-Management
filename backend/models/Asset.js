@@ -9,7 +9,7 @@ const AssetSchema = new mongoose.Schema({
   category: { 
     type: String, 
     required: true, 
-    enum: ['Power Tools', 'Scaffolding', 'Generators', 'Lifts', 'Hand Tools', 'Cleaning', 'Other' ] 
+    enum: ['Power Tools', 'Scaffolding', 'Generators', 'Lifts', 'Hand Tools', 'Cleaning', 'Other', 'Test' ] 
   },
   dailyRate: { 
     type: Number, 

@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 // @route   GET /api/analytics/summary
 // @desc    Get counts for status and categories
 // @access  Protected (Manager/Admin only ideally)
-router.get('/summary', async (req, res) => {
+router.get('/summary', auth, async (req, res) => {
     try {
         // 1. Get Status Distribution
         const statusDist = await Asset.aggregate([

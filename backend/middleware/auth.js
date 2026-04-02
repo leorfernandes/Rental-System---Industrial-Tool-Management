@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-module.exports = (req, res) => {
+module.exports = (req, res, next) => {
     const token = req.header('x-auth-token');
     
     // 1. Check if token exists
@@ -15,6 +15,8 @@ module.exports = (req, res) => {
         // 3. Add user from payload to request object
         req.user = decoded;
         
+        next();
+
     } catch (err) {
         res.status(401).json({ message: 'Token is not valid' });
     }

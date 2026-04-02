@@ -24,10 +24,6 @@ const RenterSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    notes: {
-        type: String,
-        default: ""
-    }
 });
 
 module.exports = mongoose.model('Renter', RenterSchema);

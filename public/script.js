@@ -1,44 +1,48 @@
 const API_URL = 'http://localhost:8888/api/assets';
 const mainContent = document.getElementById('main-content');
 
-// --- AUTHENTICATION LOGIC ---
-document.getElementById('auth-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
+// ==========================================
+// 1. SETUP & UTILS
+// ==========================================
+function showNotification(title, message, type = 'success') {
+    const container = document.getElementById('notification-container');
+    const toast = document.createElement('div');
+    toast.className = `${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white p-4 rounded-lg shadow-xl mb-3 transition-all duration-300`;
+    toast.innerHTML = `<div class="font-bold">${title}</div><div class="text-sm">${message}</div>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+}
 
-    try {
-        const response = await fetch(`http://localhost:8888/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+function openModal(title, formHtml, onSubmit) {
+    const modal = document.getElementById('canva-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+
+    // 1. Set the Title and the Form
+    modalTitle.innerText = title;
+    modalBody.innerHTML = formHtml;
+
+    // 2. Show the Modal
+    modal.classList.remove('hidden');
+
+    // 3. Attach the specific submit logic
+    const form = modalBody.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await onSubmit(e);
+            closeModal();
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            const userInfo = await fetch(`http://localhost:8888/api/users/${email}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json', 'x-auth-token': data.token }
-            });
-            const user = await userInfo.json();
-            localStorage.setItem('x-auth-token', data.token);
-            // Decode simple payload or just store role if backend sends it
-            if(user && user.role) localStorage.setItem('user-role', user.role); 
-            if(user && user.name) localStorage.setItem('user-name', user.name);
-            console.log(user);
-            showNotification("Success", "Logged in!", "success");
-            document.getElementById('auth-overlay').classList.add('hidden');
-            checkAuth();
-            switchTab('inventory');
-        } else {
-            showNotification("Auth Error", data.message, "error");
-        }
-    } catch (err) {
-        showNotification("Error", "Server unreachable", "error");
     }
-});
+}
 
+function closeModal() {
+    document.getElementById('canva-modal').classList.add('hidden');
+}
+
+// ==========================================
+// 2. AUTHENTICATION
+// ==========================================
 function checkAuth() {
     const token = localStorage.getItem('x-auth-token');
     if (!token) {
@@ -58,13 +62,49 @@ function displayUserInfo() {
     document.getElementById('user-name-display').innerText = name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-
 function logout() {
     localStorage.clear();
     location.reload();
 }
 
-// --- ROUTING / TAB SYSTEM ---
+document.getElementById('auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+
+    try {
+        const response = await fetch(`http://localhost:8888/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem('x-auth-token', data.token);
+            // Decode simple payload or just store role if backend sends it
+            localStorage.setItem('x-auth-token', data.token);
+            localStorage.setItem('user-role', data.user.role); 
+            localStorage.setItem('user-name', data.user.name);
+
+            showNotification("Success", "Logged in!", "success");
+
+            document.getElementById('auth-overlay').classList.add('hidden');
+            
+            checkAuth();
+            switchTab('inventory');
+        } else {
+            showNotification("Auth Error", data.message, "error");
+        }
+    } catch (err) {
+        showNotification("Error", "Server unreachable", "error");
+    }
+});
+
+// ==========================================
+// 3. NAVIGATION
+// ==========================================
 async function renderNav() {
     const navBar = document.getElementById('navBar');
     navBar.innerHTML = `<div class="max-w-7xl mx-auto px-4 flex space-x-8">
@@ -117,8 +157,9 @@ function updateTabStyles(activeTab) {
     });
 }
 
-// --- VIEWS ---
-
+// ==========================================
+// 4. VIEWS
+// ==========================================
 function renderInventoryView() {
     mainContent.innerHTML = `
         <div class="flex justify-between items-center mb-8">
@@ -194,8 +235,9 @@ function renderUsersView() {
     switchUserSubTab('renters');
 }
 
-// --- DATA FETCHING & RENDERING ---
-
+// ==========================================
+// 5. INVENTORY & ASSETS (DATA FETCHING)
+// ==========================================
 async function loadAssets() {
     try {
         const response = await fetch(API_URL, {
@@ -251,13 +293,286 @@ function renderAssets(assets) {
                 <div class="flex flex-col gap-2">
                     ${actionButton}
                 </div>
+                <div class="flex flex-row gap-2 mt-4">
+                    <button onclick="editAsset('${asset._id}')" class="w-full bg-gray-600 text-white py-2 rounded-lg font-semibold hover:bg-gray-700 transition">Edit Details</button>
+                    <button onclick="deleteAsset('${asset._id}')" class="w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition">Delete Asset</button>
+                </div>
             </div>
         `;
         grid.appendChild(card);
     });
 }
 
-// --- ANALYTICS LOGIC ---
+function filterAssets(searchTerm) {
+    const term = searchTerm.toLowerCase();
+    const cards = document.querySelectorAll('.asset-card');
+    cards.forEach(card => {
+        const text = card.innerText.toLowerCase();
+        card.style.display = text.includes(term) ? 'block' : 'none';
+    });
+}
+
+async function editAsset(id) {
+    try {
+        const res = await fetch(`/api/assets/${id}`, {
+            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
+        });
+        const asset = await res.json();
+
+        const formHtml = `
+            <form class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Asset Name</label>
+                    <input type="text" name="name" value="${asset.name}" required class="w-full p-2 border rounded-md">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                        <input type="text" name="category" value="${asset.category}" required class="w-full p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Daily Rate ($)</label>
+                        <input type="number" name="dailyRate" value="${asset.dailyRate}" required class="w-full p-2 border rounded-md">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                    <select name="status" class="w-full p-2 border rounded-md bg-white">
+                        <option value="Available" ${asset.status === 'Available' ? 'selected' : ''}>Available</option>
+                        <option value="Maintenance" ${asset.status === 'Maintenance' ? 'selected' : ''}>Maintenance</option>
+                        <option value="Retired" ${asset.status === 'Retired' ? 'selected' : ''}>Retired</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-3 rounded-lg mt-2">Update Asset</button>
+            </form>
+        `;
+
+        openModal("Edit Asset", formHtml, async (e) => {
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            const updateRes = await fetch(`/api/assets/${id}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-auth-token': localStorage.getItem('x-auth-token') 
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (updateRes.ok) {
+                showNotification("Success", "Asset updated successfully", "success");
+                loadAssets();
+            }
+        });
+    } catch (err) {
+        showNotification("Error", "Could not load asset details", "error");
+    }
+}
+
+function deleteAsset(id, name) {
+    const confirmHtml = `
+        <div class="text-center space-y-4">
+            <p class="text-slate-600">Are you sure you want to remove <span class="font-bold text-slate-800">${name}</span> from the inventory? This action cannot be undone.</p>
+            <form>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-2 border rounded-lg font-semibold">Cancel</button>
+                    <button type="submit" class="flex-1 py-2 bg-red-600 text-white rounded-lg font-bold">Delete Asset</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    openModal("Confirm Deletion", confirmHtml, async () => {
+        try {
+            const res = await fetch(`/api/assets/${id}`, {
+                method: 'DELETE',
+                headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
+            });
+
+            if (res.ok) {
+                showNotification("Deleted", "Asset removed from system", "success");
+                loadAssets(); // Refresh inventory
+            }
+        } catch (err) {
+            showNotification("Error", "Failed to delete asset", "error");
+        }
+    });
+}
+
+// ==========================================
+// 6. RENTALS & MAINTENANCE
+// ==========================================
+async function handleRent(id, name) {
+    try {
+        // 1. Fetch the list of renters to populate the dropdown
+        const res = await fetch('/api/renters', {
+            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
+        });
+        const renters = await res.json();
+
+        // 2. Build the Form HTML
+        const formHtml = `
+            <p class="text-slate-500 mb-6 font-medium">Renting out: <span class="text-slate-800 font-bold">${name}</span></p>
+            <form id="rental-form" class="space-y-5">
+                <input type="hidden" name="asset" value="${id}">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Renter</label>
+                    <select name="renter" required 
+                        class="w-full border border-slate-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="" disabled selected>Choose a customer...</option>
+                        ${renters.map(r => `<option value="${r._id}">${r.lastName}, ${r.firstName}</option>`).join('')}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Return Date</label>
+                    <input type="date" name="returnDate" required 
+                        min="${new Date().toISOString().split('T')[0]}"
+                        class="w-full border border-slate-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" 
+                        class="flex-1 px-4 py-2 border border-slate-200 rounded-lg font-semibold hover:bg-slate-50 transition text-slate-600">Cancel</button>
+                    <button type="submit" 
+                        class="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 transition">Confirm Rental</button>
+                </div>
+            </form>
+        `;
+
+        // 3. Open the universal modal with the specific submission logic
+        openModal("Rent Equipment", formHtml, async (e) => {
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            const rentRes = await fetch('/api/rentals', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-auth-token': localStorage.getItem('x-auth-token') 
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (rentRes.ok) {
+                showNotification("Success", "Rental agreement created!", "success");
+                loadAssets();
+            } else {
+                const err = await rentRes.json();
+                showNotification("Error", err.message, "error");
+            }
+        });
+
+    } catch (err) {
+        showNotification("Error", "Could not load renter database", "error");
+    }
+}
+
+async function handleReturn(assetId) {
+    try {
+        const response = await fetch(`http://localhost:8888/api/rentals/return-by-asset/${assetId}`, {
+            method: 'PUT',
+            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
+        });
+
+        if (response.ok) {
+            showNotification("Success", "Equipment returned and moved to Maintenance.", "success");
+            loadAssets();
+        } else {
+            const data = await response.json();
+            showNotification("Return Error", data.message, "error");
+        }
+    } catch (error) {
+        showNotification("Error", "Could not process return.", "error");
+    }
+}
+
+async function handleClearMaintenance(id) {
+    try {
+        const res = await fetch(`${API_URL}/${id}/clear-maintenance`, { 
+            method: 'PUT',
+            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
+        });
+        
+        if (res.ok) {
+            showNotification("Inspection Logged", "Equipment is now Available.", "success");
+            loadAssets(); 
+        } else {
+            showNotification("Error", "Failed to update status.", "error");
+        }
+    } catch (err) {
+        showNotification("Error", "Server unreachable", "error");
+    }
+}
+
+async function populateRenterDropdown() {
+    const select = document.getElementById('renter-select');
+    
+    try {
+        const response = await fetch('http://localhost:8888/api/renters', {
+            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
+        });
+        const renters = await response.json();
+
+        if (response.ok && renters.length > 0) {
+            select.innerHTML = '<option value="" disabled selected>-- Select a Renter --</option>';
+            renters.forEach(r => {
+                const option = document.createElement('option');
+                option.value = r._id; // We send the ID to the backend, not the name
+                option.textContent = `${r.firstName} ${r.lastName} (${r.phone})`;
+                select.appendChild(option);
+            });
+        } else if (response.ok && renters.length === 0) {
+            select.innerHTML = '<option value="">No renters available</option>';
+        } else {
+            select.innerHTML = '<option value="">Error loading renters</option>';
+        }
+    } catch (err) {
+        console.error("Failed to fetch renters:", err);
+    }
+}
+
+// Handle Rental Form Submission
+document.getElementById('rental-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const rentalData = {
+        asset: document.getElementById('modal-asset-id').value,
+        renter: document.getElementById('renter-select').value,
+        returnDate: document.getElementById('return-date').value
+    };
+
+    console.log("Submitting rental:", rentalData);
+
+    try {
+        const response = await fetch('http://localhost:8888/api/rentals', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-auth-token': localStorage.getItem('x-auth-token') 
+            },
+            body: JSON.stringify(rentalData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification("Rental Confirmed", `Total Cost: $${result.totalCost}`, "success");
+            closeModal();
+            loadAssets(); 
+        } else {
+            showNotification("Rental Error", result.message, "error");
+        }
+    } catch (error) {
+        showNotification("Error", "Failed to connect to the server.", "error");
+    }
+});
+
+// ==========================================
+// 7. ANALYTICS
+// ==========================================
 async function switchAnalyticsSubTab(subTab) {
     const stage = document.getElementById('analytics-stage');
     stage.innerHTML = '<div class="animate-pulse text-slate-400">Loading metrics...</div>';
@@ -291,7 +606,6 @@ async function switchAnalyticsSubTab(subTab) {
             break;
     }
 }
-
 
 function renderInventoryAnalytics(data, stage) {
     stage.innerHTML = `
@@ -443,7 +757,9 @@ async function exportInventoryToCSV() {
     document.body.removeChild(link);
 }
 
-// --- USERS TAB LOGIC ---
+// ==========================================
+// 8. USERS: RENTERS
+// ==========================================
 async function switchUserSubTab(subTab) {
     const stage = document.getElementById('users-stage');
     stage.innerHTML = '<div class="animate-pulse text-slate-400">Loading users...</div>';
@@ -541,287 +857,6 @@ async function renderRenters() {
     }
 }
 
-async function renderStaff() {
-    const mainContent = document.getElementById('users-stage'); 
-    mainContent.innerHTML = '<div class="animate-pulse text-slate-400 text-center py-10">Loading Staff Directory...</div>';
-
-    try {
-        const res = await fetch('/api/users', {
-            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
-        });
-        const staff = await res.json();
-
-        mainContent.innerHTML = `
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-slate-800">System Users</h3>
-                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">
-                            ${staff.length} Active Accounts
-                        </span>
-                    </div>
-                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
-                                <tr>
-                                    <th class="px-6 py-4">Employee</th>
-                                    <th class="px-6 py-4">Access Level</th>
-                                    <th class="px-6 py-4">Account Created</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                ${staff.map(user => `
-                                    <tr class="hover:bg-slate-50 transition">
-                                        <td class="px-6 py-4">
-                                            <p class="font-semibold text-slate-800">${user.name}</p>
-                                            <p class="text-xs text-slate-500">${user.email}</p>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <span class="px-2 py-1 rounded text-xs font-bold ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}">
-                                                ${user.role.toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-slate-500">
-                                            ${new Date(user.date).toLocaleDateString()}
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-1 bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-fit">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">Add New Employee</h3>
-                    <form id="add-staff-form" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
-                            <input type="text" id="s-name" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
-                            <input type="email" id="s-email" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Initial Password</label>
-                            <input type="password" id="s-password" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
-                            <select id="s-role" class="w-full p-2 border rounded-md bg-white">
-                                <option value="staff">Staff (Standard)</option>
-                                <option value="admin">Admin (Full Access)</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition mt-2">
-                            Authorize Account
-                        </button>
-                    </form>
-                </div>
-            </div>
-            </div>
-        `;
-
-        document.getElementById('add-staff-form').addEventListener('submit', handleAddStaff);
-    } catch (err) {
-        showNotification("Security Error", "You do not have permission to view staff.", "error");
-    }
-}
-
-// --- UTILS & MODALS ---
-
-function filterAssets(searchTerm) {
-    const term = searchTerm.toLowerCase();
-    const cards = document.querySelectorAll('.asset-card');
-    cards.forEach(card => {
-        const text = card.innerText.toLowerCase();
-        card.style.display = text.includes(term) ? 'block' : 'none';
-    });
-}
-
-async function handleRent(id, name) {
-    try {
-        // 1. Fetch the list of renters to populate the dropdown
-        const res = await fetch('/api/renters', {
-            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
-        });
-        const renters = await res.json();
-
-        // 2. Build the Form HTML
-        const formHtml = `
-            <p class="text-slate-500 mb-6 font-medium">Renting out: <span class="text-slate-800 font-bold">${name}</span></p>
-            <form id="rental-form" class="space-y-5">
-                <input type="hidden" name="asset" value="${id}">
-                
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Renter</label>
-                    <select name="renterId" required 
-                        class="w-full border border-slate-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                        <option value="" disabled selected>Choose a customer...</option>
-                        ${renters.map(r => `<option value="${r._id}">${r.lastName}, ${r.firstName}</option>`).join('')}
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Return Date</label>
-                    <input type="date" name="returnDate" required 
-                        min="${new Date().toISOString().split('T')[0]}"
-                        class="w-full border border-slate-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeModal()" 
-                        class="flex-1 px-4 py-2 border border-slate-200 rounded-lg font-semibold hover:bg-slate-50 transition text-slate-600">Cancel</button>
-                    <button type="submit" 
-                        class="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 transition">Confirm Rental</button>
-                </div>
-            </form>
-        `;
-
-        console.log("Rent form HTML:", formHtml); // Debug log to verify form structure
-
-        // 3. Open the universal modal with the specific submission logic
-        openModal("Rent Equipment", formHtml, async (e) => {
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-
-            const rentRes = await fetch('/api/rentals', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-auth-token': localStorage.getItem('x-auth-token') 
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (rentRes.ok) {
-                showNotification("Success", "Rental agreement created!", "success");
-                renderAssets();
-            } else {
-                const err = await rentRes.json();
-                showNotification("Error", err.message, "error");
-            }
-        });
-
-    } catch (err) {
-        showNotification("Error", "Could not load renter database", "error");
-    }
-}
-
-function showNotification(title, message, type = 'success') {
-    const container = document.getElementById('notification-container');
-    const toast = document.createElement('div');
-    toast.className = `${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white p-4 rounded-lg shadow-xl mb-3 transition-all duration-300`;
-    toast.innerHTML = `<div class="font-bold">${title}</div><div class="text-sm">${message}</div>`;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
-}
-
-// --- HANDLERS ---
-// Handle Rental Form Submission
-document.getElementById('rental-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const rentalData = {
-        asset: document.getElementById('modal-asset-id').value,
-        renter: document.getElementById('renter-select').value,
-        returnDate: document.getElementById('return-date').value
-    };
-
-    console.log("Submitting rental:", rentalData);
-
-    try {
-        const response = await fetch('http://localhost:8888/api/rentals', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-auth-token': localStorage.getItem('x-auth-token') 
-            },
-            body: JSON.stringify(rentalData)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            showNotification("Rental Confirmed", `Total Cost: $${result.totalCost}`, "success");
-            closeModal();
-            loadAssets(); 
-        } else {
-            showNotification("Rental Error", result.message, "error");
-        }
-    } catch (error) {
-        showNotification("Error", "Failed to connect to the server.", "error");
-    }
-});
-
-// Handle Return
-async function handleReturn(assetId) {
-    try {
-        const response = await fetch(`http://localhost:8888/api/rentals/return-by-asset/${assetId}`, {
-            method: 'PUT',
-            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
-        });
-
-        if (response.ok) {
-            showNotification("Success", "Equipment returned and moved to Maintenance.", "success");
-            loadAssets();
-        } else {
-            const data = await response.json();
-            showNotification("Return Error", data.message, "error");
-        }
-    } catch (error) {
-        showNotification("Error", "Could not process return.", "error");
-    }
-}
-
-// Handle Clearing Maintenance / Inspection
-async function handleClearMaintenance(id) {
-    try {
-        const res = await fetch(`${API_URL}/${id}/clear-maintenance`, { 
-            method: 'PUT',
-            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
-        });
-        
-        if (res.ok) {
-            showNotification("Inspection Logged", "Equipment is now Available.", "success");
-            loadAssets(); 
-        } else {
-            showNotification("Error", "Failed to update status.", "error");
-        }
-    } catch (err) {
-        showNotification("Error", "Server unreachable", "error");
-    }
-}
-
-// Populate Renter Dropdown in Rent Modal
-async function populateRenterDropdown() {
-    const select = document.getElementById('renter-select');
-    
-    try {
-        const response = await fetch('http://localhost:8888/api/renters', {
-            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
-        });
-        const renters = await response.json();
-
-        if (response.ok && renters.length > 0) {
-            select.innerHTML = '<option value="" disabled selected>-- Select a Renter --</option>';
-            renters.forEach(r => {
-                const option = document.createElement('option');
-                option.value = r._id; // We send the ID to the backend, not the name
-                option.textContent = `${r.firstName} ${r.lastName} (${r.phone})`;
-                select.appendChild(option);
-            });
-        } else if (response.ok && renters.length === 0) {
-            select.innerHTML = '<option value="">No renters available</option>';
-        } else {
-            select.innerHTML = '<option value="">Error loading renters</option>';
-        }
-    } catch (err) {
-        console.error("Failed to fetch renters:", err);
-    }
-}
-
-// Handle adding a new renter
 async function handleAddRenter(e) {
     e.preventDefault();
 
@@ -917,21 +952,102 @@ async function editRenter(id) {
     });
 }
 
-async function deleteStaff(userId) {
-    if (!confirm("Are you sure you want to delete this staff account? This action cannot be undone.")) {
-        return;
-    }
+// ==========================================
+// 9. USERS: STAFF
+// ==========================================
+async function renderStaff() {
+    const mainContent = document.getElementById('users-stage'); 
+    mainContent.innerHTML = '<div class="animate-pulse text-slate-400 text-center py-10">Loading Staff Directory...</div>';
+
     try {
-        const res = await fetch(`/api/users/${userId}`, {
-            method: 'DELETE',
+        const res = await fetch('/api/users', {
             headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
         });
-        if (res.ok) {
-            showNotification("Deleted", "Staff account has been deleted.", "success");
-            renderStaff();
-        }
+        const staff = await res.json();
+
+        mainContent.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-slate-800">System Users</h3>
+                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">
+                            ${staff.length} Active Accounts
+                        </span>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                                <tr>
+                                    <th class="px-6 py-4">Employee</th>
+                                    <th class="px-6 py-4">Access Level</th>
+                                    <th class="px-6 py-4">Account Created</th>
+                                    <th class="px-6 py-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${staff.map(user => `
+                                    <tr class="hover:bg-slate-50 transition">
+                                        <td class="px-6 py-4">
+                                            <p class="font-semibold text-slate-800">${user.name}</p>
+                                            <p class="text-xs text-slate-500">${user.email}</p>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 rounded text-xs font-bold ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}">
+                                                ${user.role.toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-slate-500">
+                                            ${new Date(user.date).toLocaleDateString()}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <button onclick="deleteStaff('${user._id}')" class="text-red-600 hover:underline text-sm font-medium">
+                                                Delete
+                                            </button>
+                                            <button onclick="editStaff('${user._id}')" class="ml-4 text-blue-600 hover:underline text-sm font-medium">
+                                                Edit
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-1 bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-fit">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">Add New Employee</h3>
+                    <form id="add-staff-form" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
+                            <input type="text" id="s-name" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                            <input type="email" id="s-email" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Initial Password</label>
+                            <input type="password" id="s-password" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
+                            <select id="s-role" class="w-full p-2 border rounded-md bg-white">
+                                <option value="staff">Staff (Standard)</option>
+                                <option value="admin">Admin (Full Access)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition mt-2">
+                            Create Staff Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+            </div>
+        `;
+
+        document.getElementById('add-staff-form').addEventListener('submit', handleAddStaff);
     } catch (err) {
-        showNotification("Error", "Failed to delete staff account.", "error");
+        showNotification("Security Error", "You do not have permission to view staff.", "error");
     }
 }
 
@@ -977,32 +1093,73 @@ async function handleAddStaff(e) {
     }
 }
 
-function openModal(title, formHtml, onSubmit) {
-    const modal = document.getElementById('canva-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalBody = document.getElementById('modal-body');
-
-    // 1. Set the Title and the Form
-    modalTitle.innerText = title;
-    modalBody.innerHTML = formHtml;
-
-    // 2. Show the Modal
-    modal.classList.remove('hidden');
-
-    // 3. Attach the specific submit logic
-    const form = modalBody.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await onSubmit(e); // Run the passed-in function
-            closeModal();
+async function deleteStaff(userId) {
+    if (!confirm("Are you sure you want to delete this staff account? This action cannot be undone.")) {
+        return;
+    }
+    try {
+        const res = await fetch(`/api/users/${userId}`, {
+            method: 'DELETE',
+            headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
         });
+        if (res.ok) {
+            showNotification("Deleted", "Staff account has been deleted.", "success");
+            renderStaff();
+        }
+    } catch (err) {
+        showNotification("Error", "Failed to delete staff account.", "error");
     }
 }
 
-function closeModal() {
-    document.getElementById('canva-modal').classList.add('hidden');
+async function editStaff(id) {
+    // Fetch current data first
+    const res = await fetch(`/api/users/${id}`, {
+        headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
+    });
+    const user = await res.json();
+    const formHtml = `
+        <form class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
+                <input type="text" name="name" value="${user.name}" required class="p-2 border rounded w-full">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                <input type="email" name="email" value="${user.email}" required class="p-2 border rounded w-full">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
+                <select name="role" class="w-full p-2 border rounded bg-white">
+                    <option value="staff" ${user.role === 'staff' ? 'selected' : ''}>Staff (Standard)</option>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin (Full Access)</option>
+                </select>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">
+                Update Employee
+            </button>
+        </form>
+    `;
+    // Display the form in a modal or a designated container
+    openModal("Edit Staff Profile", formHtml, async (e) => {
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        const putRes = await fetch(`/api/users/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-auth-token': localStorage.getItem('x-auth-token')
+            },
+            body: JSON.stringify(data)
+        });
+        if (putRes.ok) {
+            showNotification("Success", "Staff profile updated.", "success");
+            renderStaff(); // Refresh table
+        }
+    });
 }
 
+// ==========================================
+// 10. INITIALIZATION
+// ==========================================
 // Initialize
 document.addEventListener('DOMContentLoaded', checkAuth);

@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 // @route   POST api/renters
 // @desc    Register a new customer/renter
 // @access  Private (Staff/Admin only)
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
     const { firstName, lastName, email, phone, notes } = req.body;
 
     try {
@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
 
 // @route   GET api/renters
 // @desc    Get all registered renters (for the dropdown in the Rent Modal)
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
     try {
         const renters = await Renter.find().sort({ lastName: 1 });
         res.json(renters);
@@ -48,22 +48,24 @@ router.get('/', async (req, res) => {
 
 // @route   GET api/renters/:id
 // @desc    Get a single renter by ID (for the Rent Modal details view)
-router.get('/:id', async (req, res) => { 
+router.get('/:id', auth, async (req, res) => { 
     try {
         const renter = await Renter.findById(req.params.id);
+
+
         if (!renter) {
             return res.status(404).json({ message: 'Renter not found' });
         }
         res.json(renter);
     } catch (err) {
-        res.status(500).send('Server Error fetching renters');
+        res.status(500).send('Server Error fetching renter details');
     }
 });
 
 
 // @route   DELETE api/renters/:id
 // @desc    Delete a renter (Admin only ideally)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
     try {
         const renter = await Renter.findByIdAndDelete(req.params.id);
         
@@ -80,19 +82,30 @@ router.delete('/:id', async (req, res) => {
 
 // @route   PUT api/renters/:id
 // @desc    Update renter details (Admin/Staff only)
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   const { firstName, lastName, email, phone, notes } = req.body;
     try {
         let renter = await Renter.findById(req.params.id);
+
         if (!renter) {
             return res.status(404).json({ message: 'Renter not found' });
         }
+
+        // If email is being updated, check for uniqueness
+        if (email && email !== renter.email) {
+            const emailExists = await Renter.findOne({ email });
+            if (emailExists) {
+                return res.status(400).json({ message: 'Renter with this email already exists' });
+            }
+        }
+
         // Update fields if they are provided
         if (firstName) renter.firstName = firstName;
         if (lastName) renter.lastName = lastName;
         if (email) renter.email = email;
         if (phone) renter.phone = phone;
         if (notes) renter.notes = notes;
+        
         await renter.save();
         res.json(renter);
     } catch (err) {

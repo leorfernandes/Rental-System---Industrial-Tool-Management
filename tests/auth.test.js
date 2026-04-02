@@ -2,52 +2,48 @@ const request = require('supertest');
 const app = require('../backend/server');
 const mongoose = require('mongoose');
 const User = require('../backend/models/User');
-const { after } = require('node:test');
 
-describe('Authentication Flow', () => {
-    // 1. Setup a clean test user
+describe('Auth API Tests', () => {
+    // Clean up or seed database before tests
     beforeAll(async () => {
-        const user = new User({
-            username: 'testadmin',
+            const user = new User({
+            name: 'jestTester',
+            email: 'jesttester@test.com',
             password: 'password123',
             role: 'admin'
         });
         await user.save();
     });
 
-    afterAll(async () => {
-        await User.deleteMany({ username: 'testadmin' });
+        afterAll(async () => {
+        await User.deleteMany({ email: 'jesttester@test.com' });
         await mongoose.connection.close();
     });
 
-    // 2. The Core Login Test
-    it('should login successfully and return a token', async () => {
+    // TC-001: Successful login with valid credentials
+    test('TC-001: Should login successfully with valid credentials', async () => {
         const res = await request(app)
             .post('/api/auth/login')
             .send({
-                username: 'testadmin',
+                email: 'jestTester@test.com',
                 password: 'password123'
             });
 
-        // Diagnostics
-        if (res.statusCode !== 200) {
-            console.log('Login Failed Body:', res.body);
-        }
-
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty('token');
-        expect(typeof res.body.token).toBe('string');
+        expect(res.body.user.email).toBe('jesttester@test.com');
     });
 
-    // 3. The "Invalid Password" Test
-    it('should reject incorrect passwords', async () => {
+    // TC-002: Failed login with invalid credentials
+    test('TC-002: Should fail with wrong password', async () => {
         const res = await request(app)
             .post('/api/auth/login')
             .send({
-                username: 'testadmin',
+                email: 'jestTester@test.com',
                 password: 'wrongpassword'
             });
 
         expect(res.statusCode).toBe(400);
+        expect(res.body.message).toBe('Invalid Credentials');
     });
 });
