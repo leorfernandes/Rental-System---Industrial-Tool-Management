@@ -51,11 +51,11 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => { 
     try {
         const renter = await Renter.findById(req.params.id);
-
-
+        
         if (!renter) {
             return res.status(404).json({ message: 'Renter not found' });
         }
+
         res.json(renter);
     } catch (err) {
         res.status(500).send('Server Error fetching renter details');

@@ -5,6 +5,35 @@ const Asset = require('../models/Asset');
 
 const auth = require('../middleware/auth');
 
+// @route   GET api/rentals
+// @desc    Get all rentals (Admin/Staff only for overview)
+router.get('/', auth, async (req, res) => {
+    try {
+        // Populate helps turn IDs into readable names for your analytics
+        const rentals = await Rental.find()
+            .populate('asset', 'name category') 
+            .populate('renter', 'firstName lastName')
+            .sort({ rentDate: -1 }); // Show newest first
+        res.json(rentals);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error fetching rental history');
+    }
+});
+
+// @route   GET api/rentals/active
+// @desc    Get only currently active rentals (Live Dashboard)
+router.get('/active', auth, async (req, res) => {
+    try {
+        const activeRentals = await Rental.find({ status: 'Active' })
+            .populate('asset', 'name')
+            .populate('renter', 'firstName lastName');
+        res.json(activeRentals);
+    } catch (err) {
+        res.status(500).send('Server Error fetching active rentals');
+    }
+});
+
 // POST /api/rentals - Create a new rental
 router.post('/', auth, async (req, res) => {
   try {

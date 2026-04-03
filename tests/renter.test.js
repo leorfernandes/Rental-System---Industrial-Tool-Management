@@ -37,10 +37,10 @@ describe ('Renter API Master Test Suite', () => {
 
     describe('Renter Lifecycle API Tests', () => {
         /**
-         * TC-011: Create New Renter (POST)
+         * TC-012: Create New Renter (POST)
          * Goal: Verify staff can register a new customer.
          */
-        test('TC-011: Should register a new renter successfully', async () => {
+        test('TC-012: Should register a new renter successfully', async () => {
             const newRenter = {
                 firstName: 'Jest',
                 lastName: 'Renter',
@@ -55,8 +55,6 @@ describe ('Renter API Master Test Suite', () => {
                 .set('x-auth-token', testToken)
                 .send(newRenter);
 
-
-
             expect(res.statusCode).toBe(201);
             expect(res.body.email).toBe(newRenter.email);
             createdRenterId = res.body._id;
@@ -64,10 +62,10 @@ describe ('Renter API Master Test Suite', () => {
         });
 
         /**
-         * TC-012: Retrieve Renter List (GET)
+         * TC-013: Retrieve Renter List (GET)
          * Goal: Ensure renters are returned and sorted correctly.
          */
-        test('TC-012: Should retrieve all renters sorted by lastName', async () => {
+        test('TC-013: Should retrieve all renters sorted by lastName', async () => {
             const res = await request(app)
                 .get('/api/renters')
                 .set('x-auth-token', testToken);
@@ -80,10 +78,10 @@ describe ('Renter API Master Test Suite', () => {
         });
 
         /**
-         * TC-013: Retrieve One Renter Information (GET)
+         * TC-014: Retrieve One Renter Information (GET)
          * Goal: Ensure a single renter's information can be retrieved correctly.
          */
-        test('TC-013: Retrieve One Renter Information', async () => {
+        test('TC-014: Retrieve One Renter Information', async () => {
             const res = await request(app)
                 .get(`/api/renters/${createdRenterId}`)
                 .set('x-auth-token', testToken);
@@ -94,11 +92,11 @@ describe ('Renter API Master Test Suite', () => {
         });
         
         /**
-         * TC-014: Update Renter Details (PUT)
+         * TC-015: Update Renter Details (PUT)
          * Goal: Verify that existing customer data can be modified 
          * and changes persist in the database.
          */
-        test('TC-014: Should update renter phone successfully', async () => {
+        test('TC-015: Should update renter phone successfully', async () => {
             const updates = {
                 phone: '098-765-4321',
             };
@@ -118,11 +116,11 @@ describe ('Renter API Master Test Suite', () => {
     });
 
     describe('Renter Security & Integrity Tests', () => {
-        test('TC-015: Should prevent registration with a duplicate email', async () => {
+        test('TC-016: Should prevent registration with a duplicate email', async () => {
             const duplicateRenter = {
                 firstName: 'Duplicate',
                 lastName: 'Jester',
-                email: 'jestrenter@example.com', // Already used in TC-011
+                email: 'jestrenter@example.com', // Already used in TC-012
                 phone: '000-000-0000'
             };
 
@@ -133,15 +131,15 @@ describe ('Renter API Master Test Suite', () => {
 
             expect(res.statusCode).toBe(400);
             expect(res.body.message).toBe('Renter with this email already exists');
-            createdRenterEmail.push(duplicateRenter.email); // Track the email for cleanup just in case
+            createdRenterEmail.push(duplicateRenter.email); // Track the email for cleanup
         });
 
         /**
-         * TC-016: Email Collision on Update
+         * TC-017: Email Collision on Update
          * Goal: Ensure a user cannot update their email to an address 
          * already registered to another renter.
          */
-        test('TC-016: Should prevent updating email to one already in use', async () => {
+        test('TC-017: Should prevent updating email to one already in use', async () => {
             // 1. Create a second renter
             const renterB = {
                 firstName: 'Jest',
@@ -167,10 +165,10 @@ describe ('Renter API Master Test Suite', () => {
 
     describe('Renter Deletion Tests', () => {
         /**
-         * TC-017: Successful Deletion 
+         * TC-018: Successful Deletion 
          * Goal: Verify an authorized user can remove a renter.
          */
-        test('TC-017: Should delete a renter successfully when authorized', async () => {
+        test('TC-018: Should delete a renter successfully when authorized', async () => {
             const res = await request(app)
                 .delete(`/api/renters/${createdRenterId}`)
                 .set('x-auth-token', testToken);

@@ -4,11 +4,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
 
 // @route   GET api/users
 // @desc    Get all staff members (Admin only)
-router.get('/', auth, async (req, res) => {
+router.get('/', [auth, admin], async (req, res) => {
     try {
         // Double-check role for extra security
         const users = await User.find().select('-password').sort({ name: 1 });
@@ -19,7 +20,7 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', [auth, admin], async (req, res) => {
     try {
         // Double-check role for extra security
         const user = await User.findById(req.params.id).select('-password');
@@ -35,9 +36,7 @@ router.get('/:id', auth, async (req, res) => {
 
 // @route   POST api/users
 // @desc    Register a new staff member
-router.post('/', auth, async (req, res) => {
-    console.log("Content-Type Header:", req.headers['content-type']);
-    console.log("Body received:", req.body);
+router.post('/', [auth, admin], async (req, res) => {
     const { name, email, password, role } = req.body;
 
     try {
@@ -69,7 +68,7 @@ router.post('/', auth, async (req, res) => {
 
 // @route   DELETE api/users/:id
 // @desc    Delete a staff member (Admin only)
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', [auth, admin], async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
         if (!user) {
@@ -84,7 +83,7 @@ router.delete('/:id', auth, async (req, res) => {
 
 // @route  PUT api/users/:id
 // @desc   Update a staff member's details (Admin only)
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', [auth, admin], async (req, res) => {
     const { name, email, password, role } = req.body;
     try {
         const user = await User.findById(req.params.id);

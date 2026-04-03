@@ -9,7 +9,7 @@ const AssetSchema = new mongoose.Schema({
   category: { 
     type: String, 
     required: true, 
-    enum: ['Power Tools', 'Scaffolding', 'Generators', 'Lifts', 'Hand Tools', 'Cleaning', 'Other', 'Test' ] 
+    enum: ['Power Tools', 'Scaffolding', 'Generators', 'Lifts', 'Hand Tools', 'Cleaning', 'Other'] 
   },
   dailyRate: { 
     type: Number, 
@@ -21,7 +21,7 @@ const AssetSchema = new mongoose.Schema({
     enum: ['Available', 'Rented', 'Maintenance'], 
     default: 'Available' 
   },
-  lastInspection: { type: Date, default: Date.now }
+  lastInspection: { type: Date, default: Date.now },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Asset', AssetSchema);

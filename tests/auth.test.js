@@ -16,9 +16,9 @@ describe('Auth API Tests', () => {
     });
 
         afterAll(async () => {
-        await User.deleteMany({ email: 'jesttester@test.com' });
-        await mongoose.connection.close();
-    });
+            await User.deleteMany({ email: 'jesttester@test.com' });
+            await mongoose.connection.close();
+        });
 
     // TC-001: Successful login with valid credentials
     test('TC-001: Should login successfully with valid credentials', async () => {
