@@ -194,3 +194,12 @@ Developed as part of a Computer Information Systems (CIS) specialization to mast
 - **Test-Driven Development (TDD):** Writing unit and integration tests alongside feature development.
 - **Defect Prevention:** Implementing Mongoose schema validation as a 'Shift-Left' strategy to catch data errors before they reach the database.
 - **Security Auditing:** Validating JWT authentication and bcrypt password hashing to ensure API endpoint security.
+
+## 🚀 Future Improvements / Technical Debt
+
+To ensure the project was delivered on time while prioritizing robust backend logic and testing, some technical trade-offs were made. The following improvements are planned for future iterations:
+
+- **Frontend Refactoring:** The frontend logic is currently housed in a single `script.js` file (~50KB) to expedite initial development. A planned update involves refactoring this into modular ES6 files (e.g., `api.js`, `ui.js`, `utils.js`) for better separation of concerns and maintainability.
+- **Complete Test Coverage:**
+  - Expanding **Jest API integration tests** to cover edge cases for all CRUD operations.
+  - Finalizing **Playwright E2E tests** to simulate complete, end-to-end user workflows (e.g., logging in, renting a tool, and processing a return) across different browser environments.

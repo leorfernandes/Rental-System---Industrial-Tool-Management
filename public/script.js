@@ -83,8 +83,6 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
 
         if (response.ok) {
             localStorage.setItem('x-auth-token', data.token);
-            // Decode simple payload or just store role if backend sends it
-            localStorage.setItem('x-auth-token', data.token);
             localStorage.setItem('user-role', data.user.role); 
             localStorage.setItem('user-name', data.user.name);
 
@@ -472,7 +470,7 @@ async function handleRent(id, name) {
 
 async function handleReturn(assetId) {
     try {
-        const response = await fetch(`http://localhost:8888/api/rentals/return-by-asset/${assetId}`, {
+        const response = await fetch(`http://localhost:8888/api/rentals/return/${assetId}`, {
             method: 'PUT',
             headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
         });
@@ -491,7 +489,7 @@ async function handleReturn(assetId) {
 
 async function handleClearMaintenance(id) {
     try {
-        const res = await fetch(`${API_URL}/${id}/clear-maintenance`, { 
+        const res = await fetch(`${API_URL}/clear-maintenance/${id}/`, { 
             method: 'PUT',
             headers: { 'x-auth-token': localStorage.getItem('x-auth-token') }
         });
@@ -653,7 +651,7 @@ function renderRateAnalytics(data, stage) {
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="border-b border-slate-200 text-slate-500 text-sm">
-                        <th class="py-2">Category</th>
+                        <th class="py-2">Rate</th>
                         <th class="py-2">Count</th>
                     </tr>
                 </thead>
@@ -763,14 +761,19 @@ async function exportInventoryToCSV() {
 async function switchUserSubTab(subTab) {
     const stage = document.getElementById('users-stage');
     stage.innerHTML = '<div class="animate-pulse text-slate-400">Loading users...</div>';
+    const subTabs = ['renters'];
+
+    if (localStorage.getItem('user-role') === 'admin') {
+        subTabs.push('staff');
+    }
 
     // Update Sidebar Styling
-    ['renters', 'staff'].forEach(t => {
+    subTabs.forEach(t => {
         const btn = document.getElementById(`subtab-${t}`);
         btn.className = (t === subTab) 
             ? "text-left px-4 py-3 rounded-lg font-medium bg-slate-800 text-white"
             : "text-left px-4 py-3 rounded-lg font-medium text-slate-600 hover:bg-slate-200";
-    });
+        });
 
     switch (subTab) {
         case 'renters':
