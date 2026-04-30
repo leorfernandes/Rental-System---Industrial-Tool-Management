@@ -3,8 +3,6 @@
 ![Jest Tests](https://github.com/leorfernandes/Rental-System---Industrial-Tool-Management/actions/workflows/jest.yml/badge.svg)
 ![Playwright Tests](https://github.com/leorfernandes/Rental-System---Industrial-Tool-Management/actions/workflows/playwright.yml/badge.svg)
 
-**IN PROGRESS - EXPECTED APRIL 2026**
-
 ## 📋 Project Overview
 
 This project is a comprehensive rental management system designed for industrial equipment rental businesses. This project serves as a technical showcase for Backend QA Automation and State-Transition Testing. It simulates complex industrial business logic, specifically focusing on the validation of asset lifecycles (Available ↔ Rented ↔ Maintenance) and data integrity across a RESTful architecture.
@@ -30,7 +28,6 @@ Unlike standard CRUD tests, this suite focuses on Contract Testing and Business 
 - **Automated Regression:** Developed using Jest & Supertest to allow for high-speed verification of backend logic during CI/CD cycles.
 
 ## 🛠️ Technology Stack
-
 - **Runtime**: Node.js
 - **Framework**: Express.js v5
 - **Database**: MongoDB (with Mongoose ODM)
@@ -44,6 +41,9 @@ Unlike standard CRUD tests, this suite focuses on Contract Testing and Business 
 
 ```
 FinalProject/
+├── .github/workflows/
+│   ├── jest.yml               # Jest CI workflow
+│   └── playwright.yml         # Playwright E2E CI workflow
 ├── backend/
 │   ├── models/
 │   │   ├── Asset.js           # Asset schema
@@ -59,15 +59,24 @@ FinalProject/
 │   ├── connectToDatabase.js   # MongoDB connection handler
 │   ├── seeder.js              # Asset seeding utility
 │   └── seedUser.js            # User seeding utility
-├── tests/
-│   ├── asset.test.js          # Jest API integration tests
-│   └── health.test.js         # Health check endpoint tests
 ├── e2e/
 │   └── rental-flow.spec.js    # Playwright E2E tests
-├── .github/workflows/
-│   ├── jest.yml               # Jest CI workflow
-│   └── playwright.yml         # Playwright E2E CI workflow
-└── .env                       # Environment variables (not tracked)
+├── public/
+│   ├── index.html             # Base HTML single page web app
+│   └── script.js              # Script for the single page web app
+├── tests/
+│   ├── asset.test.js          # Jest API Asset tests
+│   ├── auth.test.js           # Jest API Auth tests
+│   ├── rentals.test.js        # Jest API Rentals tests
+│   ├── renter.test.js         # Jest API Renter tests
+│   └── user.test.js           # Jest API User tests
+├── .env.example               # Environment variables example
+├── .gitignore                 # Ignored files
+├── LICENSE                    # MIT License
+├── package-lock.json          # Exact dependency versions lockfile
+├── package.json               # NPM dependencies and scripts
+├── playwright.config.js       # Playwright configuration
+└── README.md                  # This file
 ```
 
 ## 🚀 Getting Started
@@ -188,16 +197,8 @@ The API includes comprehensive error handling:
 - **404**: Resource Not Found
 - **500**: Internal Server Error
 
-## 🎓 Professional Development Context
-Developed as part of a Computer Information Systems (CIS) specialization to master the intersection of Software Development and Quality Engineering. Key focus areas included:
-
-- **Test-Driven Development (TDD):** Writing unit and integration tests alongside feature development.
-- **Defect Prevention:** Implementing Mongoose schema validation as a 'Shift-Left' strategy to catch data errors before they reach the database.
-- **Security Auditing:** Validating JWT authentication and bcrypt password hashing to ensure API endpoint security.
-
-## 🚀 Future Improvements / Technical Debt
-
-To ensure the project was delivered on time while prioritizing robust backend logic and testing, some technical trade-offs were made. The following improvements are planned for future iterations:
+## 🚀 Future Improvements
+The following improvements are planned for future iterations:
 
 - **Frontend Refactoring:** The frontend logic is currently housed in a single `script.js` file (~50KB) to expedite initial development. A planned update involves refactoring this into modular ES6 files (e.g., `api.js`, `ui.js`, `utils.js`) for better separation of concerns and maintainability.
 - **Complete Test Coverage:**

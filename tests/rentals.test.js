@@ -3,6 +3,7 @@ const app = require('../backend/server');
 const Asset = require('../backend/models/Asset');
 const User = require('../backend/models/User');
 const Rental = require('../backend/models/Rental');
+const Renter = require('../backend/models/Renter');
 const mongoose = require('mongoose');
 const { describe } = require('node:test');
 
@@ -16,15 +17,37 @@ describe('User API Master Test Suite', () => {
 
     beforeAll(async () => {
         await User.deleteMany({ email: 'jestTester@test.com' }); // Clean up before starting tests
-         // Create a test user
-           const user = new User({
+           // Create a test user
+           const testUser = new User({
                name: 'jestTester',
                email: 'jestTester@test.com',
                password: 'password123',
                role: 'admin'
            });
-           await user.save();
-   
+           await testUser.save();
+        
+           // Create a test renter
+            await Renter.deleteMany({ email: 'jestRenter@test.com' }); // Clean up before starting tests
+            const testRenter = new Renter({
+                    firstName: 'Test',
+                    lastName: 'Renter',
+                    email: 'jestRenter@test.com',
+                    phone: '123-456-7890'
+                });
+                await testRenter.save();
+
+            console.log('Created Test Renter:', testRenter._id);
+
+            // Create a test asset
+            await Asset.deleteMany({ name: 'Generic Test Asset' }); // Clean up before starting tests
+            const testAsset = new Asset({
+                name: 'Generic Test Asset',
+                dailyRate: 50.00,
+                status: 'Available',
+                category: 'Scaffolding'
+            });
+            await testAsset.save();
+
            // Log in to get a valid token for all subsequent requests
            const loginRes = await request(app)
                     .post('/api/auth/login')
@@ -35,7 +58,7 @@ describe('User API Master Test Suite', () => {
        afterAll(async () => {
             await Rental.deleteMany({ _id: { $in: rentalIdsForCleaning } }); // Clean up specific test rentals
             await Asset.deleteMany({ _id: { $in: assetIdsForCleaning } }); // Clean up specific test assets
-            await User.deleteMany({ _id: { $in: renterIdsForCleaning } }); // Clean up specific test renters
+            await Renter.deleteMany({ _id: { $in: renterIdsForCleaning } }); // Clean up specific test renters
             await User.deleteMany({ _id: { $in: userIdsForCleaning } }); // Clean up specific test users
            await mongoose.connection.close();
        });
@@ -47,26 +70,8 @@ describe('User API Master Test Suite', () => {
          * and flips the Asset status to 'Rented'.
          */
         test('TC-029: Should create rental with calculated cost and update Asset status', async () => {
-        // 1. Setup: Create an Available Asset
-        const testAsset = await Asset.create({
-            name: 'Generic Test Asset',
-            dailyRate: 50.00,
-            status: 'Available',
-            category: 'Scaffolding'
-        });
-
-        const mockRenter = {
-            firstName: 'Test',
-            lastName: 'Renter',
-            email: 'jestRenter@test.com',
-            phone: '123-456-7890'
-        };
-
-        const createdRenter = await request(app)
-            .post('/api/renters')
-            .set('x-auth-token', testToken)
-            .send(mockRenter);
-        const renterId = createdRenter.body._id;
+        const testRenter = await Renter.findOne({ email: 'jestRenter@test.com' });
+        const testAsset = await Asset.findOne({ name: 'Generic Test Asset' });
 
         // 2. Define a 3-day rental period
         const today = new Date();
@@ -75,7 +80,7 @@ describe('User API Master Test Suite', () => {
 
         const rentalData = {
             asset: testAsset._id,
-            renter: renterId,
+            renter: testRenter._id,
             returnDate: threeDaysLater
         };
 
@@ -93,10 +98,6 @@ describe('User API Master Test Suite', () => {
             const updatedAsset = await Asset.findById(testAsset._id);
             expect(updatedAsset.status).toBe('Rented');
 
-            // Track IDs for cleanup
-            rentalIdsForCleaning.push(res.body._id);
-            assetIdsForCleaning.push(testAsset._id);
-            renterIdsForCleaning.push(renterId);
             createdRental = res.body; // Store for use in return tests
         });
 
@@ -171,13 +172,15 @@ describe('User API Master Test Suite', () => {
          * Goal: Verify the system blocks a rental if the asset is not 'Available'.
          */
         test('TC-034: Should block rental if asset status is Rented or Maintenance', async () => {
-            // 1. Setup: Create an asset that is already Rented
-            const busyAsset = await Asset.create({
+            // Create a busy asset for negative testing
+            await Asset.deleteMany({ name: 'Busy Test Asset' }); // Clean up before starting tests
+            const busyAsset = new Asset({
                 name: 'Busy Test Asset',
                 dailyRate: 100,
                 status: 'Rented',
                 category: 'Scaffolding'
             });
+            await busyAsset.save();
 
             // Define a 3-day rental period
             const today = new Date();
@@ -234,22 +237,24 @@ describe('User API Master Test Suite', () => {
          * Goal: Verify 404 is returned if no 'Active' rental exists for the asset.
          */
         test('TC-036: Should return 404 when trying to return an asset with no active rental', async () => {
-            const freshAsset = await Asset.create({ 
-                name: 'Idle Drill', 
+            // 1. Setup: Create an asset that is already Rented
+            await Asset.deleteMany({ name: 'Available Test Asset' }); // Clean up before starting tests
+            const availableAsset = await Asset.create({ 
+                name: 'Available Test Asset', 
                 status: 'Available', 
                 category: 'Scaffolding', 
                 dailyRate: 20 
             });
 
             const res = await request(app)
-                .put(`/api/rentals/return/${freshAsset._id}`)
+                .put(`/api/rentals/return/${availableAsset._id}`)
                 .set('x-auth-token', testToken);
 
             expect(res.statusCode).toBe(404);
             expect(res.body.message).toBe("Rental not found");
 
             // Mark for Cleanup
-            assetIdsForCleaning.push(freshAsset._id);
+            assetIdsForCleaning.push(availableAsset._id);
         });
 
         /**
@@ -257,7 +262,9 @@ describe('User API Master Test Suite', () => {
          * Goal: Verify the system blocks returning an already 'Completed' rental.
          */
         test('TC-037: Should block return request if rental is already Completed', async () => {
+            
             // 1. Setup: Create a completed rental record
+            await Asset.deleteMany({ name: 'Finished Test Asset' }); // Clean up before starting tests
             const finishedAsset = await Asset.create({ 
                 name: 'Finished Test Asset', 
                 status: 'Maintenance', 
@@ -265,6 +272,7 @@ describe('User API Master Test Suite', () => {
                 dailyRate: 15 
             });
 
+            await Rental.deleteMany({ asset: finishedAsset._id }); // Clean up any existing rentals for this asset
             await Rental.create({
                 asset: finishedAsset._id,
                 renter: new mongoose.Types.ObjectId(),
@@ -294,12 +302,7 @@ describe('User API Master Test Suite', () => {
         * Goal: Verify that the rental transaction endpoints are protected.
         */
         test('TC-038: Should reject rental creation and return if no token is provided', async () => {
-            const testAsset = await Asset.create({
-                name: 'Generic Test Asset',
-                dailyRate: 50.00,
-                status: 'Available',
-                category: 'Scaffolding'
-            });
+            const testAsset = await Asset.findOne({ name: 'Generic Test Asset' });
             
             // Attempt POST
             const postRes = await request(app)
@@ -319,12 +322,13 @@ describe('User API Master Test Suite', () => {
          * Goal: Verify that a same-day rental defaults to 1 full day of cost.
          */
         test('TC-039: Should charge a minimum of 1 day for same-day returns', async () => {
-            const testAsset = await Asset.create({
-                name: 'Test Asset for Same-Day Rental',
-                dailyRate: 40.00,
+            await Asset.deleteMany({ name: 'Test Asset for Minimum Day Rental' }); // Clean up before starting tests
+            const testAsset = await Asset.create({ 
+                name: 'Test Asset for Minimum Day Rental', 
                 status: 'Available',
-                category: 'Scaffolding'
-            });
+                dailyRate: 40,
+                category: 'Scaffolding'   
+                });
 
             // Set return date to "now" (same as rent date)
             const sameDayReturn = new Date();
@@ -342,9 +346,9 @@ describe('User API Master Test Suite', () => {
             // Logic: diffDays = Math.ceil(0) || 1; 1 * 40 = 40
             expect(res.body.totalCost).toBe(40.00);
 
-            // Mark for Cleanup
-            rentalIdsForCleaning.push(res.body._id);
-            assetIdsForCleaning.push(testAsset._id);
+            // Cleanup
+            await Rental.deleteMany({ asset: testAsset._id });
+            await Asset.findByIdAndDelete(testAsset._id);
         });
 
         /**
@@ -353,7 +357,8 @@ describe('User API Master Test Suite', () => {
          */
         test('TC-040: Should ensure Asset status transitions strictly to Maintenance', async () => {
             // 1. Setup: Create an active rental
-            const asset = await Asset.create({ 
+            await Asset.deleteMany({ name: 'Test Asset for Return Status Check' }); // Clean up before starting tests
+            const testAsset = await Asset.create({ 
                 name: 'Test Asset for Return Status Check', 
                 status: 'Available',
                 dailyRate: 60,
@@ -369,24 +374,20 @@ describe('User API Master Test Suite', () => {
                 .post('/api/rentals')
                 .set('x-auth-token', testToken)
                 .send({
-                    asset: asset._id,
+                    asset: testAsset._id,
                     renter: new mongoose.Types.ObjectId(),
                     returnDate: threeDaysLater
                 });
 
             // 2. Action: Perform the return
             await request(app)
-                .put(`/api/rentals/return/${asset._id}`)
+                .put(`/api/rentals/return/${testAsset._id}`)
                 .set('x-auth-token', testToken);
 
             // 3. Assertion: Status must be 'Maintenance', NOT 'Available'
-            const updatedAsset = await Asset.findById(asset._id);
+            const updatedAsset = await Asset.findById(testAsset._id);
             expect(updatedAsset.status).toBe('Maintenance');
             expect(updatedAsset.status).not.toBe('Available');
-
-            // Mark for Cleanup
-            rentalIdsForCleaning.push(rental.body._id);
-            assetIdsForCleaning.push(asset._id);
         });
     });
 });

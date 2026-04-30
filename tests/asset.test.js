@@ -7,28 +7,27 @@ const User = require('../backend/models/User');
 describe ('Asset API Master Test Suite', () => {
     let testToken;
     let createdAssetId;
-    let assetIdsForCleaning = []; // To track multiple cleaning assets created during tests for cleanup
 
     beforeAll(async () => {
       // Create a test user
-        const user = new User({
+        await User.deleteMany({ email: 'jesttester@test.com' }); // Clean up before starting tests
+        const testUser = new User({
             name: 'jestTester',
-            email: 'jestTester@test.com',
+            email: 'jesttester@test.com',
             password: 'password123',
             role: 'admin'
         });
-        await user.save();
+        await testUser.save();
 
         // Log in to get a valid token for all subsequent requests
         const loginRes = await request(app)
             .post('/api/auth/login')
-            .send({ email: 'jestTester@test.com', password: 'password123' });
+            .send({ email: 'jesttester@test.com', password: 'password123' });
         testToken = loginRes.body.token;
     });
 
     afterAll(async () => {
-        await Asset.deleteMany({ _id: { $in: assetIdsForCleaning } }); // Clean up specific test assets
-        await User.deleteMany({ email: 'jestTester@test.com' }); // Clean up test user
+        await User.deleteMany({ email: 'jesttester@test.com' }); // Clean up test user
         await mongoose.connection.close();
     });
   describe('Asset Lifecycle API Tests', () => {
@@ -37,8 +36,9 @@ describe ('Asset API Master Test Suite', () => {
        * Goal: Verify a logged-in user can add a tool to inventory.
        */
       test('TC-003: Should create a new asset successfully', async () => {
-          const newTool = {
-              name: 'New Tool',
+          await Asset.deleteMany({ name: 'Test Tool' }); // Ensure no duplicates from previous runs
+          const testTool = {
+              name: 'Test Tool',
               category: 'Scaffolding',
               dailyRate: 45.00,
               status: 'Available'
@@ -47,15 +47,14 @@ describe ('Asset API Master Test Suite', () => {
           const res = await request(app)
               .post('/api/assets')
               .set('x-auth-token', testToken)
-              .send(newTool);
+              .send(testTool);
 
           expect(res.statusCode).toBe(201);
-          expect(res.body.name).toBe(newTool.name);
+          expect(res.body.name).toBe(testTool.name);
           expect(res.body).toHaveProperty('_id');
           
           // Store ID for use in GET and PUT tests
           createdAssetId = res.body._id;
-          assetIdsForCleaning.push(createdAssetId);
       });
 
       /**
@@ -72,7 +71,7 @@ describe ('Asset API Master Test Suite', () => {
           // Ensure the asset we just created is in the list
           const found = res.body.find(a => a._id === createdAssetId);
           expect(found).toBeDefined();
-          expect(found.name).toBe('New Tool');
+          expect(found.name).toBe('Test Tool');
       });
 
       /**
@@ -104,6 +103,7 @@ describe ('Asset API Master Test Suite', () => {
   describe('Maintenance State Transitions', () => {
       test('TC-006: Should successfully clear maintenance and update inspection date', async () => {
           // 1. Setup: Create an asset specifically in Maintenance
+          await Asset.deleteMany({ name: 'Maintenance Asset' }); // Clean up any previous test runs
           const maintenanceAsset = await Asset.create({
               name: 'Maintenance Asset',
               status: 'Maintenance',
@@ -126,7 +126,7 @@ describe ('Asset API Master Test Suite', () => {
           expect(Date.now() - inspectionDate.getTime()).toBeLessThan(60000);
 
         // Track this asset for cleanup
-        assetIdsForCleaning.push(maintenanceAsset._id);
+        await Asset.findByIdAndDelete(maintenanceAsset._id);
       });
 
       test('TC-007: Should fail to clear maintenance if asset is already Available', async () => {
@@ -145,7 +145,7 @@ describe ('Asset API Master Test Suite', () => {
           expect(res.body.message).toBe("Asset is not in maintenance");
 
           // Cleanup
-            await Asset.findByIdAndDelete(availableAsset._id);
+        await Asset.findByIdAndDelete(availableAsset._id);
       });
   });
 
@@ -156,6 +156,7 @@ describe ('Asset API Master Test Suite', () => {
   describe('Conditional Deletion Safety', () => {
       test('TC-008: Should block deletion of a Rented asset', async () => {
           // 1. Setup: Create an asset with Rented status
+          await Asset.deleteMany({ name: 'Rented Asset' }); // Clean up any previous test runs
           const rentedAsset = await Asset.create({
               name: 'Rented Asset',
               status: 'Rented',
@@ -181,6 +182,7 @@ describe ('Asset API Master Test Suite', () => {
       });
 
       test('TC-009: Should allow deletion of an Available asset', async () => {
+          await Asset.deleteMany({ name: 'Disposable Asset' }); // Clean up any previous test runs
           const disposableAsset = await Asset.create({
               name: 'Disposable Asset',
               status: 'Available',
@@ -199,6 +201,8 @@ describe ('Asset API Master Test Suite', () => {
             const checkDb = await Asset.findById(disposableAsset._id);
             expect(checkDb).toBeNull();
             
+            //Cleanup is not needed here since we just deleted it, but if the test fails, we should ensure it doesn't linger in the DB
+          await Asset.findByIdAndDelete(disposableAsset._id);
       });
   });
 
