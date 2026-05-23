@@ -1,9 +1,9 @@
 const request = require('supertest');
-const app = require('../backend/server'); 
-const Asset = require('../backend/models/Asset');
+const app = require('../../backend/server'); 
+const Asset = require('../../backend/models/Asset');
 const mongoose = require('mongoose');
-const User = require('../backend/models/User');
-const Renter = require('../backend/models/Renter');
+const User = require('../../backend/models/User');
+const Renter = require('../../backend/models/Renter');
 
 describe ('Renter API Master Test Suite', () => {
     let testToken;
@@ -14,7 +14,7 @@ describe ('Renter API Master Test Suite', () => {
       // Create a test user
         const user = new User({
             name: 'jestTester',
-            email: 'jestTester@test.com',
+            email: 'jestrenter@test.com',
             password: 'password123',
             role: 'admin'
         });
@@ -23,7 +23,7 @@ describe ('Renter API Master Test Suite', () => {
         // Log in to get a valid token for all subsequent requests
         const loginRes = await request(app)
             .post('/api/auth/login')
-            .send({ email: 'jestTester@test.com', password: 'password123' });
+            .send({ email: 'jestrenter@test.com', password: 'password123' });
         testToken = loginRes.body.token;
     });
 
@@ -31,7 +31,7 @@ describe ('Renter API Master Test Suite', () => {
         if (createdRenterEmail.length > 0) {
             await Renter.deleteMany({ email: { $in: createdRenterEmail } }); // Clean up specific test renters if they weren't deleted in the tests
         }
-        await User.deleteMany({ email: 'jestTester@test.com' }); // Clean up test user
+        await User.deleteMany({ email: 'jestrenter@test.com' }); // Clean up test user
         await mongoose.connection.close();
     });
 

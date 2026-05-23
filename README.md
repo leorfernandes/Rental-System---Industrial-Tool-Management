@@ -27,6 +27,28 @@ Unlike standard CRUD tests, this suite focuses on Contract Testing and Business 
 - **Negative Testing:** Comprehensive coverage of 400 and 404 error codes to ensure graceful failure and clear system feedback.
 - **Automated Regression:** Developed using Jest & Supertest to allow for high-speed verification of backend logic during CI/CD cycles.
 
+## Testing Documentation
+
+Comprehensive testing documentation is available in the [`/test-documentation`](./test-documentation/) folder:
+
+- **[Test Plan](./test-documentation/TEST_PLAN.md)** - Testing strategy and approach
+- **[Test Cases](./test-documentation/TEST_CASES.md)** - Detailed test scenarios with expected results
+- **[Bug Report Template](./test-documentation/BUG_REPORT_TEMPLATE.md)** - Standardized defect reporting format
+- **[Testing Summary](./test-documentation/TESTING_SUMMARY.md)** - Test execution results and metrics
+
+### Test Coverage
+- **Unit Tests:** Jest + Supertest for API endpoint validation
+- **Integration Tests:** Database interactions and authentication flows
+- **E2E Tests:** Playwright for complete user workflows
+- **CI/CD:** Automated regression testing via GitHub Actions
+
+Run tests locally:
+```bash
+npm test                    # Run all Jest tests
+npm run test:e2e            # Run Playwright E2E tests
+npm test -- --coverage      # Generate coverage report
+```
+
 ## 🛠️ Technology Stack
 - **Runtime**: Node.js
 - **Framework**: Express.js v5
@@ -59,17 +81,18 @@ FinalProject/
 │   ├── connectToDatabase.js   # MongoDB connection handler
 │   ├── seeder.js              # Asset seeding utility
 │   └── seedUser.js            # User seeding utility
-├── e2e/
-│   └── rental-flow.spec.js    # Playwright E2E tests
 ├── public/
 │   ├── index.html             # Base HTML single page web app
 │   └── script.js              # Script for the single page web app
 ├── tests/
-│   ├── asset.test.js          # Jest API Asset tests
-│   ├── auth.test.js           # Jest API Auth tests
-│   ├── rentals.test.js        # Jest API Rentals tests
-│   ├── renter.test.js         # Jest API Renter tests
-│   └── user.test.js           # Jest API User tests
+│   ├── e2e/
+│   │   └── rental-flow.spec.js # Playwright E2E tests
+│   └── jest/    
+│       ├── asset.test.js          # Jest API Asset tests
+│       ├── auth.test.js           # Jest API Auth tests
+│       ├── rentals.test.js        # Jest API Rentals tests
+│       ├── renter.test.js         # Jest API Renter tests
+│       └── user.test.js           # Jest API User tests
 ├── .env.example               # Environment variables example
 ├── .gitignore                 # Ignored files
 ├── LICENSE                    # MIT License

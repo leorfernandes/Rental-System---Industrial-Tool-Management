@@ -1,14 +1,14 @@
 const request = require('supertest');
-const app = require('../backend/server');
+const app = require('../../backend/server');
 const mongoose = require('mongoose');
-const User = require('../backend/models/User');
+const User = require('../../backend/models/User');
 
 describe('Auth API Tests', () => {
     // Clean up or seed database before tests
     beforeAll(async () => {
             const user = new User({
             name: 'jestTester',
-            email: 'jesttester@test.com',
+            email: 'jestauth@test.com',
             password: 'password123',
             role: 'admin'
         });
@@ -16,7 +16,7 @@ describe('Auth API Tests', () => {
     });
 
         afterAll(async () => {
-            await User.deleteMany({ email: 'jesttester@test.com' });
+            await User.deleteMany({ email: 'jestauth@test.com' });
             await mongoose.connection.close();
         });
 
@@ -25,13 +25,13 @@ describe('Auth API Tests', () => {
         const res = await request(app)
             .post('/api/auth/login')
             .send({
-                email: 'jestTester@test.com',
+                email: 'jestauth@test.com',
                 password: 'password123'
             });
 
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty('token');
-        expect(res.body.user.email).toBe('jesttester@test.com');
+        expect(res.body.user.email).toBe('jestauth@test.com');
     });
 
     // TC-002: Failed login with invalid credentials
@@ -39,7 +39,7 @@ describe('Auth API Tests', () => {
         const res = await request(app)
             .post('/api/auth/login')
             .send({
-                email: 'jestTester@test.com',
+                email: 'jestauth@test.com',
                 password: 'wrongpassword'
             });
 

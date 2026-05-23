@@ -1,8 +1,8 @@
 const request = require('supertest');
-const app = require('../backend/server'); 
-const Asset = require('../backend/models/Asset');
+const app = require('../../backend/server'); 
+const Asset = require('../../backend/models/Asset');
 const mongoose = require('mongoose');
-const User = require('../backend/models/User');
+const User = require('../../backend/models/User');
 
 describe ('Asset API Master Test Suite', () => {
     let testToken;
@@ -10,10 +10,10 @@ describe ('Asset API Master Test Suite', () => {
 
     beforeAll(async () => {
       // Create a test user
-        await User.deleteMany({ email: 'jesttester@test.com' }); // Clean up before starting tests
+        await User.deleteMany({ email: 'jestasset@test.com' }); // Clean up before starting tests
         const testUser = new User({
             name: 'jestTester',
-            email: 'jesttester@test.com',
+            email: 'jestasset@test.com',
             password: 'password123',
             role: 'admin'
         });
@@ -22,12 +22,12 @@ describe ('Asset API Master Test Suite', () => {
         // Log in to get a valid token for all subsequent requests
         const loginRes = await request(app)
             .post('/api/auth/login')
-            .send({ email: 'jesttester@test.com', password: 'password123' });
+            .send({ email: 'jestasset@test.com', password: 'password123' });
         testToken = loginRes.body.token;
     });
 
     afterAll(async () => {
-        await User.deleteMany({ email: 'jesttester@test.com' }); // Clean up test user
+        await User.deleteMany({ email: 'jestasset@test.com' }); // Clean up test user
         await mongoose.connection.close();
     });
   describe('Asset Lifecycle API Tests', () => {

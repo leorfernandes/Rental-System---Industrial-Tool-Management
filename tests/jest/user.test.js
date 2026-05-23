@@ -1,6 +1,6 @@
 const request = require('supertest');
-const app = require('../backend/server'); 
-const User = require('../backend/models/User');
+const app = require('../../backend/server'); 
+const User = require('../../backend/models/User');
 const mongoose = require('mongoose');
 const { describe } = require('node:test');
 const jwt = require('jsonwebtoken');
@@ -11,11 +11,11 @@ describe('User API Master Test Suite', () => {
     let createdUserEmail = []; // To track multiple users created during tests for cleanup
 
     beforeAll(async () => {
-        await User.deleteMany({ email: 'jestTester@test.com' }); // Clean up before starting tests
+        await User.deleteMany({ email: { $in: ['jestuser@test.com', 'jest.second@test.com', 'jester.staff@test.com'] } }); // Clean up before starting tests
          // Create a test user
            const user = new User({
                name: 'jestTester',
-               email: 'jestTester@test.com',
+               email: 'jestuser@test.com',
                password: 'password123',
                role: 'admin'
            });
@@ -24,7 +24,7 @@ describe('User API Master Test Suite', () => {
            // Log in to get a valid token for all subsequent requests
            const loginRes = await request(app)
                .post('/api/auth/login')
-               .send({ email: 'jestTester@test.com', password: 'password123' });
+               .send({ email: 'jestuser@test.com', password: 'password123' });
            adminToken = loginRes.body.token;
        });
    
@@ -35,7 +35,7 @@ describe('User API Master Test Suite', () => {
            if (createdUserEmail.length > 0) {
                await User.deleteMany({ email: { $in: createdUserEmail } }); // Clean up multiple test users
            }
-           await User.deleteMany({ email: 'jestTester@test.com' }); // Clean up test user
+           await User.deleteMany({ email: 'jestuser@test.com' }); // Clean up test user
            await mongoose.connection.close();
        });
 

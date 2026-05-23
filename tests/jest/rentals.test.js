@@ -1,9 +1,9 @@
 const request = require('supertest');
-const app = require('../backend/server'); 
-const Asset = require('../backend/models/Asset');
-const User = require('../backend/models/User');
-const Rental = require('../backend/models/Rental');
-const Renter = require('../backend/models/Renter');
+const app = require('../../backend/server'); 
+const Asset = require('../../backend/models/Asset');
+const User = require('../../backend/models/User');
+const Rental = require('../../backend/models/Rental');
+const Renter = require('../../backend/models/Renter');
 const mongoose = require('mongoose');
 const { describe } = require('node:test');
 
@@ -16,11 +16,11 @@ describe('User API Master Test Suite', () => {
     let userIdsForCleaning = []; // To track the user used in rental tests for cleanup
 
     beforeAll(async () => {
-        await User.deleteMany({ email: 'jestTester@test.com' }); // Clean up before starting tests
+        await User.deleteMany({ email: 'jestrentals@test.com' }); // Clean up before starting tests
            // Create a test user
            const testUser = new User({
                name: 'jestTester',
-               email: 'jestTester@test.com',
+               email: 'jestrentals@test.com',
                password: 'password123',
                role: 'admin'
            });
@@ -51,7 +51,7 @@ describe('User API Master Test Suite', () => {
            // Log in to get a valid token for all subsequent requests
            const loginRes = await request(app)
                     .post('/api/auth/login')
-                    .send({ email: 'jestTester@test.com', password: 'password123' });
+                    .send({ email: 'jestrentals@test.com', password: 'password123' });
                 testToken = loginRes.body.token;
         });
    
