@@ -1,7 +1,24 @@
-# Rental System - Industrial Tool Management
+# Industrial Tool Rental Management System
 
 ![Jest Tests](https://github.com/leorfernandes/Rental-System---Industrial-Tool-Management/actions/workflows/jest.yml/badge.svg)
 ![Playwright Tests](https://github.com/leorfernandes/Rental-System---Industrial-Tool-Management/actions/workflows/playwright.yml/badge.svg)
+
+A robust, full-stack RESTful API and single-page application built with **Node.js**, **Express v5**, and **MongoDB**. This project simulates real-world industrial inventory operations, featuring a backend state-machine to manage asset lifecycles, role-based access security pipelines, and an enterprise-grade automated testing matrix.
+
+## 🚀 Core Engineering Features
+
+*   **State-Machine Asset Tracking:** Implements strict backend business logic managing asset states (`Available`, `Rented`, `Maintenance`), ensuring data consistency and preventing invalid lifecycle transitions.
+*   **Granular RBAC Security:** Features a stateless JWT authentication layer with Role-Based Access Control middleware protecting sensitive administrative and staff endpoints.
+*   **Transactional Cost Automation:** Automatically computes rental duration costs upon asset return processing.
+*   **Data Integrity & Validation:** Enforces strict Mongoose schemas and input validation rules to handle boundary values and reject malicious payloads at the API entry point.
+*   **Continuous Integration (CI/CD):** Automated deployment workflows utilizing GitHub Actions to trigger isolated backend regression testing matrices on every code push.
+
+## 🛠️ Technology Stack
+
+*   **Runtime & Framework:** Node.js, Express.js v5 (Routing & Middleware architecture)
+*   **Database Tier:** MongoDB Atlas with Mongoose ODM (Schema design & validation modeling)
+*   **Security Pipeline:** JSON Web Tokens (JWT), bcryptjs
+*   **Quality Engineering Layer:** Jest & Supertest (API Integration Testing), Playwright (End-to-End Workflow Testing)
 
 ## 📋 Project Overview
 
